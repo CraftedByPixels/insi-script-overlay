@@ -120,7 +120,6 @@
       color: #777;
       margin-top: 10px;
     }
-    /* фон для фраз менеджера */
     .mp-line {
       background: #eef6ff;
       padding: 2px 4px;
@@ -136,8 +135,6 @@
     <button class="tab-btn" onclick="switchTab('outgoing', this)">Исходящий (Ctrl+O)</button>
     <button class="tab-btn" onclick="switchTab('edit', this)">Редактирование</button>
   </div>
-
-  <!-- Входящий -->
   <div id="incoming" class="tab-content active">
     <div class="search-container">
       <input type="text" id="incoming-search" placeholder="Поиск по фразе..." oninput="searchInScript('incoming')">
@@ -147,8 +144,6 @@
       <button class="btn btn-secondary" onclick="copyToClipboard('incoming-text')">Копировать всё</button>
     </div>
   </div>
-
-  <!-- Исходящий -->
   <div id="outgoing" class="tab-content">
     <div class="search-container">
       <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." oninput="searchInScript('outgoing')">
@@ -158,29 +153,23 @@
       <button class="btn btn-secondary" onclick="copyToClipboard('outgoing-text')">Копировать всё</button>
     </div>
   </div>
-
-  <!-- Редактирование -->
   <div id="edit" class="tab-content">
     <h3>Настройка скриптов</h3>
     <p>Входящий скрипт:</p>
     <textarea id="incoming-edit"></textarea>
     <button class="btn btn-success" onclick="saveScript('incoming')">Сохранить входящий</button>
-
     <p>Исходящий скрипт:</p>
     <textarea id="outgoing-edit"></textarea>
     <button class="btn btn-success" onclick="saveScript('outgoing')">Сохранить исходящий</button>
-
     <div class="controls">
       <button class="btn btn-primary" onclick="downloadAll()">Скачать бэкап (TXT)</button>
       <button class="btn btn-secondary" onclick="resetToDefault()">Сбросить к заводским</button>
     </div>
-
     <div class="hotkeys-info">
       Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
     </div>
   </div>
 </div>
-
 <script>
 const defaultIncoming = `Здравствуйте! Это компания INSI. Чем я могу вам помочь?
 
@@ -319,111 +308,85 @@ const defaultOutgoing = `<span class="mp-line">Олег Николаевич, з
 <span class="mp-line">Всего доброго!</span>`;
 
 function safeStorageGet(key) {
-  try { return localStorage.getItem(key); }
-  catch { return null; }
+  try { return localStorage.getItem(key); } catch (e) { return null; }
 }
-function safeStorageSet(key, value) {
-  try { localStorage.setItem(key, value); return true; }
-  catch { return false; }
+function safeStorageSet(key, val) {
+  try { localStorage.setItem(key, val); return true; } catch (e) { return false; }
 }
 function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 function renderHighlighted(container, text, query) {
-  container.innerHTML = '';
+  container.innerHTML = "";
   if (!query) {
     container.innerHTML = text;
     return;
   }
-  const plain = text.replace(/<span class="mp-line">/g, '').replace(/<\/span>/g, '');
-  const re = new RegExp(escapeRegExp(query), 'gi');
-  let lastIndex = 0;
-  for (const m of plain.matchAll(re)) {
-    const start = m.index;
-    const end = start + m[0].length;
-    container.appendChild(document.createTextNode(plain.slice(lastIndex, start)));
-    const mark = document.createElement('span');
-    mark.className = 'highlight';
-    mark.textContent = plain.slice(start, end);
+  var plain = text.split('<span class="mp-line">').join('').split('</span>').join('');
+  var re = new RegExp(escapeRegExp(query), "gi");
+  var lastIndex = 0;
+  var matches = Array.from(plain.matchAll(re));
+  for (var m of matches) {
+    container.appendChild(document.createTextNode(plain.slice(lastIndex, m.index)));
+    var mark = document.createElement("span");
+    mark.className = "highlight";
+    mark.textContent = m[0];
     container.appendChild(mark);
-    lastIndex = end;
+    lastIndex = m.index + m[0].length;
   }
   if (lastIndex < plain.length) {
     container.appendChild(document.createTextNode(plain.slice(lastIndex)));
   }
 }
-function switchTab(tabName, btnEl) {
-  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById(tabName).classList.add('active');
-  if (btnEl) btnEl.classList.add('active');
+function switchTab(name, btn) {
+  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+  if (btn) btn.classList.add("active");
 }
 function loadScripts() {
-  const incoming = safeStorageGet('incomingScript') ?? defaultIncoming;
-  const outgoing = safeStorageGet('outgoingScript') ?? defaultOutgoing;
-  document.getElementById('incoming-text').textContent = incoming;
-  document.getElementById('outgoing-text').innerHTML = outgoing;
-  document.getElementById('incoming-edit').value = incoming;
-  document.getElementById('outgoing-edit').value = outgoing;
+  const inc = safeStorageGet("incomingScript") || defaultIncoming;
+  const out = safeStorageGet("outgoingScript") || defaultOutgoing;
+  document.getElementById("incoming-text").innerHTML = inc;
+  document.getElementById("outgoing-text").innerHTML = out;
+  document.getElementById("incoming-edit").value = inc;
+  document.getElementById("outgoing-edit").value = out;
 }
 function saveScript(type) {
-  const text = document.getElementById(type + '-edit').value;
-  const ok = safeStorageSet(type + 'Script', text);
-  if (ok) {
-    loadScripts();
-    alert('Сохранено!');
-  } else {
-    alert('Ошибка сохранения: localStorage недоступен.');
-  }
+  const val = document.getElementById(type + "-edit").value;
+  if (safeStorageSet(type + "Script", val)) { loadScripts(); alert("Сохранено!"); }
 }
 function searchInScript(type) {
-  const query = document.getElementById(type + '-search').value.trim();
-  const container = document.getElementById(type + '-text');
-  const text = safeStorageGet(type + 'Script') ?? (type === 'incoming' ? defaultIncoming : defaultOutgoing);
-  renderHighlighted(container, text, query);
+  const q = document.getElementById(type + "-search").value.trim();
+  const c = document.getElementById(type + "-text");
+  const t = safeStorageGet(type + "Script") || (type === "incoming" ? defaultIncoming : defaultOutgoing);
+  renderHighlighted(c, t, q);
 }
-async function copyToClipboard(elementId) {
-  const el = document.getElementById(elementId);
-  const text = el.innerText || el.textContent;
-  try {
-    await navigator.clipboard.writeText(text);
-    alert('Скопировано!');
-  } catch {
-    const ta = document.createElement('textarea');
-    ta.value = text;
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand('copy');
-    document.body.removeChild(ta);
-    alert('Скопировано!');
-  }
+async function copyToClipboard(id) {
+  const t = document.getElementById(id).innerText;
+  try { await navigator.clipboard.writeText(t); alert("Скопировано!"); } catch (e) {}
 }
 function downloadAll() {
-  const inc = safeStorageGet('incomingScript') ?? defaultIncoming;
-  const out = safeStorageGet('outgoingScript') ?? defaultOutgoing;
-  const content = `INCOMING:
-${inc}
-
---- OUTGOING ---
-${out}`;
-  const blob = new Blob([content], {type: 'text/plain'});
-  const a = document.createElement('a');
+  const i = safeStorageGet("incomingScript") || defaultIncoming;
+  const o = safeStorageGet("outgoingScript") || defaultOutgoing;
+  const blob = new Blob(["INCOMING:\
+" + i + "\
+\
+OUTGOING:\
+" + o], {type: "text/plain"});
+  const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
-  a.download = 'insi-scripts.txt';
+  a.download = "scripts.txt";
   a.click();
 }
 function resetToDefault() {
-  if (confirm('Сбросить все правки?')) {
-    localStorage.removeItem('incomingScript');
-    localStorage.removeItem('outgoingScript');
-    loadScripts();
-  }
+  if (confirm("Сбросить?")) { localStorage.removeItem("incomingScript"); localStorage.removeItem("outgoingScript"); loadScripts(); }
 }
-document.addEventListener('keydown', (e) => {
-  if (e.ctrlKey && e.code === 'KeyI') { e.preventDefault(); switchTab('incoming', document.querySelectorAll('.tab-btn')[0]); }
-  if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); switchTab('outgoing', document.querySelectorAll('.tab-btn')[1]); }
+document.addEventListener("keydown", (e) => {
+  if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming", document.querySelectorAll(".tab-btn")[0]); }
+  if (e.ctrlKey && e.code === "KeyO") { e.preventDefault(); switchTab("outgoing", document.querySelectorAll(".tab-btn")[1]); }
 });
-document.addEventListener('DOMContentLoaded', loadScripts);
+document.addEventListener("DOMContentLoaded", loadScripts);
 </script>
 </body>
 </html>
