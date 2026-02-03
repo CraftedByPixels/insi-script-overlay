@@ -13,6 +13,7 @@
       --border-color:#ddd;
       --highlight:#ff0;
       --mp-bg:#c2f0fc;
+      --cl-color:#555;
     }
     body{
       font-family:'Segoe UI',sans-serif;
@@ -68,22 +69,24 @@
     textarea{
       height:340px;
       font-family:monospace;
-      line-height:1.5;
+      line-height:1.35;
       resize:vertical;
       white-space:pre-wrap;
     }
 
+    /* ВАЖНО: компактнее интервалы */
     .script-box{
       background:#fafafa;
-      padding:20px;
+      padding:18px;
       border:1px solid var(--border-color);
       border-radius:8px;
       min-height:300px;
       white-space:pre-wrap;
-      font-size:17px;
-      line-height:1.6;
+      font-size:16px;
+      line-height:1.35;     /* было 1.6 */
       overflow-wrap:anywhere;
     }
+
     .highlight{
       background:var(--highlight);
       font-weight:700;
@@ -115,12 +118,20 @@
       color:#777;
       margin-top:10px;
     }
+
+    /* МП-реплика */
     .mp-line{
       background:var(--mp-bg);
       padding:2px 4px;
       border-radius:3px;
       display:inline;
     }
+
+    /* Клиентская строка: без "К -", но визуально отличаем */
+    .cl-line{
+      color:var(--cl-color);
+    }
+
     .hint{
       font-size:13px;
       color:#666;
@@ -188,29 +199,35 @@
   const KEY_IN = "incomingScript";
   const KEY_OUT = "outgoingScript";
 
-  // === Defaults (заводские тексты) ===
-  const defaultIncoming = `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
+  // ======================
+  // Заводские скрипты
+  // ======================
+
+  // ВХОДЯЩИЙ — НАШ СОГЛАСОВАННЫЙ СТАРТ
+  // Интервалы:
+  // - между МП и ответом клиента: один <br>
+  // - между блоками: <br><br>
+  const defaultIncoming =
+`<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
-Сергей<br>
+<span class="cl-line">Сергей</span><br>
 <span class="mp-line">Приятно, Сергей, слушаю вас.</span><br>
-(Клиент озвучивает запрос)<br>
-<span class="mp-line">Понял. Чтобы корректно посчитать стоимость и подготовить КП, я задам несколько вопросов — удобно?</span>`;
+<span class="cl-line">(Озвучивает запрос)</span><br>
+<span class="mp-line">Понял. Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span><br><br>
+<span class="mp-line">Первый вопрос: в каком городе планируете строительство?</span>`;
 
-  const defaultOutgoing = `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
+  // ИСХОДЯЩИЙ — пока оставил нейтральный, чтобы не мешал входящему
+  const defaultOutgoing =
+`<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
-Сергей<br>
-<span class="mp-line">Приятно, Сергей.</span><br><br>
+<span class="cl-line">(Имя)</span><br>
 <span class="mp-line">Вы ранее интересовались быстровозводимыми зданиями — актуально?</span><br>
-Да<br><br>
-<span class="mp-line">Чтобы корректно посчитать стоимость и подготовить КП, я задам несколько вопросов — удобно?</span><br>
-Да<br>
-1) Город строительства<br>
-2) Длина × ширина, высота по стене<br>
-3) Назначение, кран-балка, утепление, тип крыши<br>
-4) Проёмы, особенности, монтаж/доставку, сроки и финансирование<br><br>
-<span class="mp-line">После расчёта назначим короткую видеовстречу для обсуждения КП.</span>`;
+<span class="cl-line">(Да/нет)</span><br>
+<span class="mp-line">Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span>`;
 
-  // === Storage helpers ===
+  // ======================
+  // Storage helpers
+  // ======================
   function safeStorageGet(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
   }
@@ -218,7 +235,9 @@
     try { localStorage.setItem(key, val); return true; } catch (_) { return false; }
   }
 
-  // === Utils ===
+  // ======================
+  // Utils
+  // ======================
   function escapeHtml(s) {
     return String(s)
       .replaceAll("&", "&amp;")
@@ -240,22 +259,25 @@
     const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(s);
     if (looksLikeHtml) return s;
 
+    // plain text -> html with <br>, plus simple MP markers
     const lines = s.replace(/\r\n/g, "\n").split("\n");
     const out = [];
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) { out.push(""); continue; }
 
+      // "МП - ..." or "[МП] ..."
       const mp1 = trimmed.match(/^МП\s*[-:—]\s*(.*)$/i);
       const mp2 = trimmed.match(/^\[МП\]\s*(.*)$/i);
+
       if (mp1) out.push(`<span class="mp-line">${escapeHtml(mp1[1])}</span>`);
       else if (mp2) out.push(`<span class="mp-line">${escapeHtml(mp2[1])}</span>`);
-      else out.push(escapeHtml(line));
+      else out.push(`<span class="cl-line">${escapeHtml(line)}</span>`);
     }
     return out.join("<br>");
   }
 
-  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line">
+  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line"> + <span class="cl-line">
   function buildSafeFragmentFromHtml(html) {
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
@@ -271,10 +293,12 @@
       if (node.nodeType !== Node.ELEMENT_NODE) return;
 
       const tag = node.tagName.toUpperCase();
+
       if (tag === "BR") {
         parentFrag.appendChild(document.createElement("br"));
         return;
       }
+
       if (tag === "SPAN" && node.classList.contains("mp-line")) {
         const span = document.createElement("span");
         span.className = "mp-line";
@@ -282,6 +306,16 @@
         parentFrag.appendChild(span);
         return;
       }
+
+      if (tag === "SPAN" && node.classList.contains("cl-line")) {
+        const span = document.createElement("span");
+        span.className = "cl-line";
+        span.textContent = stripClientPrefixInPlainText(node.textContent || "");
+        parentFrag.appendChild(span);
+        return;
+      }
+
+      // Любой другой тег превращаем в текст
       if (node.childNodes && node.childNodes.length) {
         for (const ch of node.childNodes) walk(ch, parentFrag);
       }
