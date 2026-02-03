@@ -343,7 +343,8 @@ function switchTab(name, btn) {
 }
 function loadScripts() {
   const inc = safeStorageGet("incomingScript") || defaultIncoming;
-  const out = safeStorageGet("outgoingScript") || defaultOutgoing;
+  const out = safeStorageGet("outgoingScript") || defaultOutgoing
+  ;
   document.getElementById("incoming-text").innerHTML = inc;
   document.getElementById("outgoing-text").innerHTML = out;
   document.getElementById("incoming-edit").value = inc;
@@ -357,7 +358,8 @@ function searchInScript(type) {
   const q = document.getElementById(type + "-search").value.trim();
   const c = document.getElementById(type + "-text");
   const t = safeStorageGet(type + "Script") || (type === "incoming" ? defaultIncoming : defaultOutgoing);
-  renderHighlighted(c, t, q);
+  346
+  (c, t, q);
 }
 async function copyToClipboard(id) {
   const t = document.getElementById(id).innerText;
