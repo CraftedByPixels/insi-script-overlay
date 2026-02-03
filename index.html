@@ -188,18 +188,22 @@
   const KEY_IN = "incomingScript";
   const KEY_OUT = "outgoingScript";
 
-  // === Defaults (можно заменить на ваши финальные тексты) ===
-  const defaultIncoming = `<span class="mp-line">Здравствуйте! Это компания INSI. Чем я могу вам помочь?</span><br>
-К - Хочу ангар посчитать.<br>
-<span class="mp-line">Отлично, уточню пару вопросов для расчёта.</span><br>
-К - Давайте.`;
+  // === Defaults (заводские тексты) ===
+  const defaultIncoming = `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
+<span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
+Сергей<br>
+<span class="mp-line">Приятно, Сергей, слушаю вас.</span><br>
+(Клиент озвучивает запрос)<br>
+<span class="mp-line">Понял. Чтобы корректно посчитать стоимость и подготовить КП, я задам несколько вопросов — удобно?</span>`;
 
-  const defaultOutgoing = `<span class="mp-line">Здравствуйте! Меня зовут ___, я менеджер проекта ИНСИ.</span><br>
-К - Здравствуйте.<br><br>
+  const defaultOutgoing = `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
+<span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
+Сергей<br>
+<span class="mp-line">Приятно, Сергей.</span><br><br>
 <span class="mp-line">Вы ранее интересовались быстровозводимыми зданиями — актуально?</span><br>
-К - Да.<br><br>
-<span class="mp-line">Чтобы корректно посчитать стоимость, уточню несколько параметров, хорошо?</span><br>
-К - Да, давайте.<br>
+Да<br><br>
+<span class="mp-line">Чтобы корректно посчитать стоимость и подготовить КП, я задам несколько вопросов — удобно?</span><br>
+Да<br>
 1) Город строительства<br>
 2) Длина × ширина, высота по стене<br>
 3) Назначение, кран-балка, утепление, тип крыши<br>
@@ -226,30 +230,22 @@
 
   // Удаляем "К - / К: / К —" только в начале строк (для отображения/копирования)
   function stripClientPrefixInPlainText(s) {
-    // начало строки или после \n, затем любые пробелы, "К", пробелы, один из разделителей, пробелы
     return String(s).replace(/(^|\n)\s*К\s*[-:—]\s*/gim, "$1");
   }
 
   function normalizeToHtml(raw) {
     let s = String(raw ?? "");
-
-    // Если скрипт хранится как обычный текст — сначала уберем "К -"
-    // (так сохраняется смысл ответа, а метка исчезает)
-    // Если скрипт хранится как HTML, метки "К - " обычно все равно находятся в текстовых узлах;
-    // дополнительно обработаем на этапе DOM-рендера (ниже).
     s = stripClientPrefixInPlainText(s);
 
     const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(s);
     if (looksLikeHtml) return s;
 
-    // plain text -> html with <br>, plus simple MP markers
     const lines = s.replace(/\r\n/g, "\n").split("\n");
     const out = [];
     for (const line of lines) {
       const trimmed = line.trim();
       if (!trimmed) { out.push(""); continue; }
 
-      // "МП - ..." or "[МП] ..."
       const mp1 = trimmed.match(/^МП\s*[-:—]\s*(.*)$/i);
       const mp2 = trimmed.match(/^\[МП\]\s*(.*)$/i);
       if (mp1) out.push(`<span class="mp-line">${escapeHtml(mp1[1])}</span>`);
@@ -259,7 +255,7 @@
     return out.join("<br>");
   }
 
-  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line"> (текст внутри)
+  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line">
   function buildSafeFragmentFromHtml(html) {
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
@@ -268,12 +264,10 @@
 
     function walk(node, parentFrag) {
       if (node.nodeType === Node.TEXT_NODE) {
-        // ВАЖНО: убираем "К - " и в HTML-скриптах, если оно встречается в текстовых узлах
         const cleaned = stripClientPrefixInPlainText(node.nodeValue);
         parentFrag.appendChild(document.createTextNode(cleaned));
         return;
       }
-
       if (node.nodeType !== Node.ELEMENT_NODE) return;
 
       const tag = node.tagName.toUpperCase();
@@ -281,7 +275,6 @@
         parentFrag.appendChild(document.createElement("br"));
         return;
       }
-
       if (tag === "SPAN" && node.classList.contains("mp-line")) {
         const span = document.createElement("span");
         span.className = "mp-line";
@@ -289,8 +282,6 @@
         parentFrag.appendChild(span);
         return;
       }
-
-      // Любой другой тег превращаем в текст (не переносим потенциально опасный HTML)
       if (node.childNodes && node.childNodes.length) {
         for (const ch of node.childNodes) walk(ch, parentFrag);
       }
@@ -388,13 +379,12 @@
 
   async function copyBoxText(boxId) {
     const el = document.getElementById(boxId);
-    const text = el ? el.innerText : ""; // innerText возвращает «человеческий» текст [web:48]
+    const text = el ? el.innerText : "";
 
     try {
       if (window.isSecureContext && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(text);
       } else {
-        // Fallback (устаревший, но часто выручает) [web:33]
         const ta = document.createElement("textarea");
         ta.value = text;
         document.body.appendChild(ta);
@@ -428,7 +418,6 @@
     loadIntoEditor();
   }
 
-  // === Wiring ===
   document.addEventListener("DOMContentLoaded", () => {
     render("incoming");
     render("outgoing");
