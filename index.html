@@ -69,12 +69,12 @@
     textarea{
       height:340px;
       font-family:monospace;
-      line-height:1.35;
+      line-height:1.25;
       resize:vertical;
       white-space:pre-wrap;
     }
 
-    /* ВАЖНО: компактнее интервалы */
+    /* === Компактные интервалы === */
     .script-box{
       background:#fafafa;
       padding:18px;
@@ -83,8 +83,12 @@
       min-height:300px;
       white-space:pre-wrap;
       font-size:16px;
-      line-height:1.35;     /* было 1.6 */
+      line-height:1.18;         /* плотнее */
       overflow-wrap:anywhere;
+      letter-spacing:0;
+    }
+    .script-box br{
+      line-height:0.9;          /* переносы плотнее */
     }
 
     .highlight{
@@ -122,14 +126,17 @@
     /* МП-реплика */
     .mp-line{
       background:var(--mp-bg);
-      padding:2px 4px;
       border-radius:3px;
       display:inline;
+      padding:1px 4px;          /* меньше */
+      line-height:1.05;         /* чтобы фон не раздувал строку */
     }
 
-    /* Клиентская строка: без "К -", но визуально отличаем */
+    /* Клиентская строка */
     .cl-line{
       color:var(--cl-color);
+      display:inline;
+      line-height:1.05;
     }
 
     .hint{
@@ -203,10 +210,9 @@
   // Заводские скрипты
   // ======================
 
-  // ВХОДЯЩИЙ — НАШ СОГЛАСОВАННЫЙ СТАРТ
-  // Интервалы:
-  // - между МП и ответом клиента: один <br>
-  // - между блоками: <br><br>
+  // ВХОДЯЩИЙ — согласованный старт
+  // Между МП и клиентом: <br>
+  // Между блоками: <br><br>
   const defaultIncoming =
 `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
@@ -216,7 +222,7 @@
 <span class="mp-line">Понял. Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span><br><br>
 <span class="mp-line">Первый вопрос: в каком городе планируете строительство?</span>`;
 
-  // ИСХОДЯЩИЙ — пока оставил нейтральный, чтобы не мешал входящему
+  // ИСХОДЯЩИЙ — нейтральный (не мешает входящему)
   const defaultOutgoing =
 `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
@@ -266,7 +272,6 @@
       const trimmed = line.trim();
       if (!trimmed) { out.push(""); continue; }
 
-      // "МП - ..." or "[МП] ..."
       const mp1 = trimmed.match(/^МП\s*[-:—]\s*(.*)$/i);
       const mp2 = trimmed.match(/^\[МП\]\s*(.*)$/i);
 
@@ -315,7 +320,6 @@
         return;
       }
 
-      // Любой другой тег превращаем в текст
       if (node.childNodes && node.childNodes.length) {
         for (const ch of node.childNodes) walk(ch, parentFrag);
       }
