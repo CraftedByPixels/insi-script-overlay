@@ -140,6 +140,111 @@
       color:#666;
       margin:8px 0 0;
     }
+
+    /* === Самоконтроль: очень компактно === */
+    .score-wrap{
+      background:#fafafa;
+      border:1px solid var(--border-color);
+      border-radius:10px;
+      padding:10px;
+    }
+    .score-head{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      justify-content:space-between;
+      margin-bottom:8px;
+    }
+    .score-title{
+      margin:0;
+      font-size:16px;
+      font-weight:800;
+    }
+    .score-meta{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+    }
+    .score-meta input{
+      height:30px;
+      padding:4px 8px;
+      border:1px solid var(--border-color);
+      border-radius:8px;
+      font-size:13px;
+      width:170px;
+      box-sizing:border-box;
+    }
+    .pill{
+      background:#fff;
+      border:1px solid var(--border-color);
+      border-radius:999px;
+      padding:4px 8px;
+      font-weight:800;
+      font-size:12px;
+      white-space:nowrap;
+    }
+    .score-summary{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      align-items:center;
+      margin:6px 0 10px;
+    }
+    .score-table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+      border:1px solid var(--border-color);
+      border-radius:10px;
+      overflow:hidden;
+    }
+    .score-table th, .score-table td{
+      border-bottom:1px solid var(--border-color);
+      padding:5px 8px;
+      font-size:13px;
+      line-height:1.1;
+      vertical-align:top;
+    }
+    .score-table th{
+      background:#f2f3f7;
+      font-weight:800;
+      padding:6px 8px;
+      text-align:left;
+    }
+    .score-table tr:last-child td{ border-bottom:none; }
+    .score-table .stage{
+      font-weight:800;
+      background:#fbfbfd;
+    }
+    .score-table .code{
+      width:64px;
+      color:#666;
+      font-weight:700;
+      white-space:nowrap;
+    }
+    .score-select{
+      width:58px;
+      height:26px;
+      padding:0 6px;
+      border:1px solid var(--border-color);
+      border-radius:6px;
+      font-size:13px;
+      background:#fff;
+    }
+    .score-actions{
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
+      justify-content:space-between;
+      align-items:center;
+      margin-top:10px;
+    }
+    .small{
+      font-size:12px;
+      color:#666;
+    }
   </style>
 </head>
 <body>
@@ -147,6 +252,7 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="incoming">Входящий (Ctrl+I)</button>
       <button class="tab-btn" data-tab="outgoing">Исходящий (Ctrl+O)</button>
+      <button class="tab-btn" data-tab="score">Самоконтроль</button>
       <button class="tab-btn" data-tab="edit">Редактирование</button>
     </div>
 
@@ -168,6 +274,46 @@
       <div id="outgoing-text" class="script-box"></div>
       <div class="controls">
         <button class="btn btn-secondary" data-copy="outgoing-text">Копировать всё</button>
+      </div>
+    </div>
+
+    <!-- Самоконтроль -->
+    <div id="score" class="tab-content">
+      <div class="score-wrap">
+        <div class="score-head">
+          <h3 class="score-title">Самоконтроль звонка</h3>
+          <div class="score-meta">
+            <input id="score-agent" type="text" placeholder="Менеджер (например, Гагик)">
+            <input id="score-date" type="text" placeholder="Дата (например, 08.01.26)">
+          </div>
+        </div>
+
+        <div class="score-summary">
+          <span class="pill" id="score-total">Итого: 0</span>
+          <span class="pill" id="score-max">Максимум: 0</span>
+          <span class="pill" id="score-percent">Процент: 0%</span>
+          <span class="pill" id="score-grade">Оценка: —</span>
+        </div>
+
+        <table class="score-table" aria-label="Самоконтроль звонка">
+          <thead>
+            <tr>
+              <th style="width:14%;">Код</th>
+              <th>Пункт</th>
+              <th style="width:90px;">Оценка</th>
+            </tr>
+          </thead>
+          <tbody id="score-body"></tbody>
+        </table>
+
+        <div class="score-actions">
+          <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-success" id="score-save">Сохранить</button>
+            <button class="btn btn-secondary" id="score-reset">Сбросить</button>
+            <button class="btn btn-primary" id="score-copy">Копировать отчёт</button>
+          </div>
+          <div class="small">0 — нет, 1 — частично, 2 — да. Автоподсчёт сверху.</div>
+        </div>
       </div>
     </div>
 
@@ -200,6 +346,9 @@
 (() => {
   const KEY_IN = "incomingScript";
   const KEY_OUT = "outgoingScript";
+
+  /* === Самоконтроль storage === */
+  const KEY_SCORE = "insiCallSelfControl_v1";
 
   const defaultIncoming =
 `МП: Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.
@@ -325,7 +474,6 @@
 К: Спасибо, до свидания
 МП: Всего доброго!`;
 
-  // === Исходящий (по твоему сценарию, в том же стиле, без цифр/пунктов) ===
   const defaultOutgoing =
 `К: Алло / Слушаю / Да
 МП: Здравствуйте.
@@ -459,22 +607,7 @@
 
 МП: Тогда до встречи и спасибо за обращение в нашу компанию.
 К: Спасибо, до свидания
-МП: Всего доброго!
-
-МП: Если клиент не готов отвечать и просит перейти в мессенджер
-К: Владимир, давайте в Telegram, я всё туда вышлю
-МП: Да, конечно. Только один момент: пока не перешли в Telegram, давайте сразу договоримся о видеовстрече, на которой обсудим КП. Вам удобно в следующий четверг в первой половине дня?
-К: Да, хорошо
-МП: Договорились. Олег Николаевич, к этому номеру у вас привязан Telegram?
-К: Да
-МП: Отлично, тогда до связи в Telegram, до свидания!
-К: До свидания!
-
-К: Давайте это обсудим в Telegram
-МП: Договорились. Олег Николаевич, к этому номеру у вас привязан Telegram?
-К: Да
-МП: Хорошо, тогда до связи в Telegram, до свидания!
-К: До свидания!`;
+МП: Всего доброго!`;
 
   function safeStorageGet(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -586,6 +719,241 @@
     document.getElementById("outgoing-edit").value = getRaw("outgoing");
   }
 
+  /* === Самоконтроль: структура таблицы (как в примере) === */
+  const scoreRows = [
+    { type:"stage", code:"1", text:"Знакомство" },
+    { type:"item",  code:"1.1", text:"Поздоровался" },
+    { type:"item",  code:"1.2", text:"Представил себя" },
+    { type:"item",  code:"1.3", text:"Представил компанию" },
+    { type:"item",  code:"1.4", text:"Назвал свою должность" },
+    { type:"item",  code:"1.5", text:"Назвал клиента по имени" },
+
+    { type:"stage", code:"2", text:"Установление контакта" },
+    { type:"item",  code:"2.1", text:"Уточнил удобство для разговора" },
+    { type:"item",  code:"2.2", text:"Объяснил причину звонка" },
+    { type:"item",  code:"2.3", text:"Вопрос для начала разговора" },
+
+    { type:"stage", code:"3", text:"Выявление потребности" },
+    { type:"item",  code:"3.0", text:"Разрешение задавать вопросы" },
+    { type:"item",  code:"3.1", text:"Город строительства" },
+    { type:"item",  code:"3.2", text:"Габариты: ширина, длина, высота" },
+    { type:"item",  code:"3.3", text:"Проемы: ворота, окна, двери" },
+    { type:"item",  code:"3.4", text:"Утепление (толщина сендвича)" },
+    { type:"item",  code:"3.5", text:"Назначение здания" },
+    { type:"item",  code:"3.6", text:"Наличие/Отсутствие кран балки" },
+    { type:"item",  code:"3.7", text:"Тип крыши (односкатная, двускатная)" },
+    { type:"item",  code:"3.8", text:"Дополнительные особенности" },
+    { type:"item",  code:"3.9", text:"Монтаж" },
+    { type:"item",  code:"3.10", text:"Доставка" },
+
+    { type:"stage", code:"4", text:"Выявление ЛПР, ЛВР" },
+    { type:"item",  code:"4.1", text:"Уточнение ЛПР, ЛВР" },
+
+    { type:"stage", code:"5", text:"Бюджет, срочность, срок принятия решения, конкуренты" },
+    { type:"item",  code:"5.1", text:"Уточнение по бюджету" },
+    { type:"item",  code:"5.2", text:"Уточнение сроков принятия решения" },
+    { type:"item",  code:"5.3", text:"Уточнение срочности выполнения работ" },
+    { type:"item",  code:"5.4", text:"Уточнение по конкурентам" },
+
+    { type:"stage", code:"6", text:"Путь клиента" },
+    { type:"item",  code:"6.1", text:"Договоренность об обсуждении КП" },
+    { type:"item",  code:"6.2", text:"Обозначение ближайших действий" },
+    { type:"item",  code:"6.3", text:"Обозначение всех этапов взаимодействия" },
+
+    { type:"stage", code:"7", text:"Завершение разговора" },
+    { type:"item",  code:"7.1", text:"Подведение итогов разговора" },
+    { type:"item",  code:"7.2", text:"Подтверждение следующего контакта" },
+    { type:"item",  code:"7.3", text:"Прощание" },
+
+    { type:"stage", code:"8", text:"Стиль разговора" },
+    { type:"item",  code:"8.1", text:"Деловой" }
+  ];
+
+  function scoreBuildIfNeeded() {
+    const tbody = document.getElementById("score-body");
+    if (tbody.dataset.built === "1") return;
+
+    tbody.innerHTML = "";
+    for (const r of scoreRows) {
+      const tr = document.createElement("tr");
+
+      const tdCode = document.createElement("td");
+      tdCode.className = "code";
+      tdCode.textContent = r.code;
+
+      const tdText = document.createElement("td");
+      tdText.textContent = r.text;
+
+      const tdVal = document.createElement("td");
+
+      if (r.type === "stage") {
+        tr.className = "stage";
+        tdVal.textContent = "";
+      } else {
+        const sel = document.createElement("select");
+        sel.className = "score-select";
+        ["0","1","2"].forEach(v => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          sel.appendChild(opt);
+        });
+        sel.value = "0";
+        sel.addEventListener("change", scoreRecalc);
+        tdVal.appendChild(sel);
+      }
+
+      tr.appendChild(tdCode);
+      tr.appendChild(tdText);
+      tr.appendChild(tdVal);
+      tbody.appendChild(tr);
+    }
+
+    tbody.dataset.built = "1";
+  }
+
+  function scoreGetStateFromUI() {
+    const agent = document.getElementById("score-agent").value || "";
+    const date = document.getElementById("score-date").value || "";
+
+    const tbody = document.getElementById("score-body");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+
+    const items = [];
+    let itemIndex = 0;
+    for (let i = 0; i < scoreRows.length; i++) {
+      const def = scoreRows[i];
+      if (def.type === "stage") continue;
+      const tr = rows[i];
+      const sel = tr.querySelector("select");
+      items.push({ idx: itemIndex, code: def.code, score: Number(sel?.value || 0) });
+      itemIndex++;
+    }
+    return { agent, date, items, savedAt: new Date().toISOString() };
+  }
+
+  function scoreApplyStateToUI(state) {
+    if (!state) return;
+
+    document.getElementById("score-agent").value = state.agent || "";
+    document.getElementById("score-date").value = state.date || "";
+
+    const tbody = document.getElementById("score-body");
+    const rows = Array.from(tbody.querySelectorAll("tr"));
+
+    const map = new Map();
+    if (Array.isArray(state.items)) {
+      for (const it of state.items) map.set(it.code, it.score);
+    }
+
+    for (let i = 0; i < scoreRows.length; i++) {
+      const def = scoreRows[i];
+      if (def.type === "stage") continue;
+      const tr = rows[i];
+      const sel = tr.querySelector("select");
+      const v = map.has(def.code) ? map.get(def.code) : 0;
+      if (sel) sel.value = String(v);
+    }
+  }
+
+  function scoreLoad() {
+    try {
+      const raw = safeStorageGet(KEY_SCORE);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (_) { return null; }
+  }
+
+  function scoreSave(state) {
+    try { return safeStorageSet(KEY_SCORE, JSON.stringify(state)); }
+    catch (_) { return false; }
+  }
+
+  function scoreRecalc() {
+    const tbody = document.getElementById("score-body");
+    const sels = Array.from(tbody.querySelectorAll("select"));
+    const total = sels.reduce((s, el) => s + Number(el.value || 0), 0);
+    const max = sels.length * 2;
+    const percent = max ? Math.round((total / max) * 100) : 0;
+
+    document.getElementById("score-total").textContent = `Итого: ${total}`;
+    document.getElementById("score-max").textContent = `Максимум: ${max}`;
+    document.getElementById("score-percent").textContent = `Процент: ${percent}%`;
+
+    // Градация как в примере (пороговые значения можно менять)
+    let grade = "—";
+    if (total >= 62) grade = "100%";
+    else if (total >= 50) grade = "80%";
+    else if (total >= 31) grade = "50%";
+    else grade = "<50%";
+    document.getElementById("score-grade").textContent = `Оценка: ${grade}`;
+  }
+
+  async function scoreCopyReport() {
+    const st = scoreGetStateFromUI();
+    const tbody = document.getElementById("score-body");
+    const sels = Array.from(tbody.querySelectorAll("select"));
+    const total = sels.reduce((s, el) => s + Number(el.value || 0), 0);
+
+    const max = sels.length * 2;
+    const percent = max ? Math.round((total / max) * 100) : 0;
+
+    const lines = [];
+    lines.push("Этапы звонка | Звонки");
+    if (st.agent || st.date) lines.push(`${(st.agent || "").trim()} ${(st.date || "").trim()}`.trim());
+    lines.push("");
+
+    // Печатаем как в таблице: этапы и пункты с оценкой
+    let rowIndex = 0;
+    for (const def of scoreRows) {
+      if (def.type === "stage") {
+        lines.push(`${def.code}. ${def.text}`);
+      } else {
+        const tr = tbody.querySelectorAll("tr")[rowIndex];
+        const val = tr.querySelector("select")?.value ?? "0";
+        lines.push(`${def.code} ${def.text}`);
+        lines.push(String(val));
+      }
+      rowIndex++;
+    }
+
+    lines.push("");
+    lines.push(`Итог: ${total} (из ${max}, ${percent}%)`);
+
+    // copy
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(lines.join("\n"));
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = lines.join("\n");
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      alert("Скопировано!");
+    } catch (e) {
+      alert("Не удалось скопировать (проверь HTTPS/права браузера).");
+    }
+  }
+
+  function scoreReset() {
+    const tbody = document.getElementById("score-body");
+    Array.from(tbody.querySelectorAll("select")).forEach(s => s.value = "0");
+    document.getElementById("score-agent").value = "";
+    document.getElementById("score-date").value = "";
+    scoreRecalc();
+    try { localStorage.removeItem(KEY_SCORE); } catch (_) {}
+  }
+
+  function renderScore() {
+    scoreBuildIfNeeded();
+    const saved = scoreLoad();
+    if (saved) scoreApplyStateToUI(saved);
+    scoreRecalc();
+  }
+
   function switchTab(name) {
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
@@ -596,6 +964,7 @@
     if (name === "incoming") render("incoming");
     if (name === "outgoing") render("outgoing");
     if (name === "edit") loadIntoEditor();
+    if (name === "score") renderScore();
   }
 
   async function copyBoxText(boxId) {
@@ -668,6 +1037,22 @@
 
     document.getElementById("download-btn").addEventListener("click", downloadAll);
     document.getElementById("reset-btn").addEventListener("click", resetToDefault);
+
+    // Самоконтроль кнопки
+    document.getElementById("score-save").addEventListener("click", () => {
+      const st = scoreGetStateFromUI();
+      if (scoreSave(st)) alert("Самоконтроль сохранён!");
+      else alert("Не удалось сохранить самоконтроль.");
+    });
+    document.getElementById("score-reset").addEventListener("click", () => {
+      if (!confirm("Сбросить самоконтроль?")) return;
+      scoreReset();
+    });
+    document.getElementById("score-copy").addEventListener("click", scoreCopyReport);
+
+    // Автопересчёт при вводе имени/даты (не влияет на баллы, просто чтобы сохранялось)
+    document.getElementById("score-agent").addEventListener("input", () => {});
+    document.getElementById("score-date").addEventListener("input", () => {});
 
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming"); }
