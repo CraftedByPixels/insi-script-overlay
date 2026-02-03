@@ -83,12 +83,12 @@
       min-height:300px;
       white-space:pre-wrap;
       font-size:16px;
-      line-height:1.18;         /* плотнее */
+      line-height:1.18;
       overflow-wrap:anywhere;
       letter-spacing:0;
     }
     .script-box br{
-      line-height:0.9;          /* переносы плотнее */
+      line-height:0.9;
     }
 
     .highlight{
@@ -123,16 +123,13 @@
       margin-top:10px;
     }
 
-    /* МП-реплика */
     .mp-line{
       background:var(--mp-bg);
       border-radius:3px;
       display:inline;
-      padding:1px 4px;          /* меньше */
-      line-height:1.05;         /* чтобы фон не раздувал строку */
+      padding:1px 4px;
+      line-height:1.05;
     }
-
-    /* Клиентская строка */
     .cl-line{
       color:var(--cl-color);
       display:inline;
@@ -207,22 +204,41 @@
   const KEY_OUT = "outgoingScript";
 
   // ======================
-  // Заводские скрипты
+  // Заводские скрипты (до нужной части)
   // ======================
-
-  // ВХОДЯЩИЙ — согласованный старт
-  // Между МП и клиентом: <br>
-  // Между блоками: <br><br>
   const defaultIncoming =
 `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
 <span class="cl-line">Сергей</span><br>
 <span class="mp-line">Приятно, Сергей, слушаю вас.</span><br>
 <span class="cl-line">(Озвучивает запрос)</span><br>
-<span class="mp-line">Понял. Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span><br><br>
-<span class="mp-line">Первый вопрос: в каком городе планируете строительство?</span>`;
+<span class="mp-line">Отлично, для того чтобы посчитать для вас стоимость ангара и подготовить КП, мне нужно задать несколько вопросов, хорошо?</span><br>
+<span class="cl-line">Да, давайте.</span><br><br>
 
-  // ИСХОДЯЩИЙ — нейтральный (не мешает входящему)
+<span class="mp-line">Сергей, подскажите, пожалуйста, в каком городе планируете строительство?</span><br>
+<span class="cl-line">Екатеринбург</span><br>
+
+<span class="mp-line">Уточните, пожалуйста, длину и ширину здания.</span><br>
+<span class="cl-line">20×25</span><br>
+
+<span class="mp-line">Какая высота по стене нужна?</span><br>
+<span class="cl-line">6 метров</span><br>
+
+<span class="mp-line">Сергей, подскажите, какое будет назначение у здания?</span><br>
+<span class="cl-line">Склад лакокрасочной продукции</span><br><br>
+
+<span class="mp-line">Уточните, кран-балка нужна будет?</span><br>
+<span class="cl-line">Да</span><br>
+
+<span class="mp-line">Принято. Какая грузоподъёмность кран-балки?</span><br>
+<span class="cl-line">5 тонн</span><br>
+
+<span class="mp-line">Ходить будет на всю длину?</span><br>
+<span class="cl-line">На всю длину</span><br>
+
+<span class="mp-line">Один кран или несколько?</span><br>
+<span class="cl-line">Один</span>`;
+
   const defaultOutgoing =
 `<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
 <span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
@@ -231,9 +247,6 @@
 <span class="cl-line">(Да/нет)</span><br>
 <span class="mp-line">Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span>`;
 
-  // ======================
-  // Storage helpers
-  // ======================
   function safeStorageGet(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
   }
@@ -241,9 +254,6 @@
     try { localStorage.setItem(key, val); return true; } catch (_) { return false; }
   }
 
-  // ======================
-  // Utils
-  // ======================
   function escapeHtml(s) {
     return String(s)
       .replaceAll("&", "&amp;")
@@ -253,7 +263,6 @@
       .replaceAll("'", "&#039;");
   }
 
-  // Удаляем "К - / К: / К —" только в начале строк (для отображения/копирования)
   function stripClientPrefixInPlainText(s) {
     return String(s).replace(/(^|\n)\s*К\s*[-:—]\s*/gim, "$1");
   }
@@ -265,7 +274,6 @@
     const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(s);
     if (looksLikeHtml) return s;
 
-    // plain text -> html with <br>, plus simple MP markers
     const lines = s.replace(/\r\n/g, "\n").split("\n");
     const out = [];
     for (const line of lines) {
@@ -282,7 +290,6 @@
     return out.join("<br>");
   }
 
-  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line"> + <span class="cl-line">
   function buildSafeFragmentFromHtml(html) {
     const wrapper = document.createElement("div");
     wrapper.innerHTML = html;
