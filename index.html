@@ -74,21 +74,33 @@
       white-space:pre-wrap;
     }
 
-    /* === Компактные интервалы === */
+    /* === Ровные межстрочные расстояния (строка = div) === */
     .script-box{
       background:#fafafa;
       padding:18px;
       border:1px solid var(--border-color);
       border-radius:8px;
       min-height:300px;
-      white-space:pre-wrap;
       font-size:16px;
-      line-height:1.18;
+      line-height:1.25;
       overflow-wrap:anywhere;
-      letter-spacing:0;
     }
-    .script-box br{
-      line-height:0.9;
+    .line{
+      margin:2px 0;            /* одинаково между всеми строками */
+    }
+    .line.gap{
+      margin:10px 0;           /* “пустая строка” = разделитель блока */
+    }
+
+    .mp-pill{
+      background:var(--mp-bg);
+      border-radius:3px;
+      padding:1px 4px;
+      display:inline;
+      line-height:1.1;
+    }
+    .cl-text{
+      color:var(--cl-color);
     }
 
     .highlight{
@@ -97,6 +109,7 @@
       border-radius:3px;
       padding:0 2px;
     }
+
     .controls{
       margin-top:15px;
       display:flex;
@@ -122,20 +135,6 @@
       color:#777;
       margin-top:10px;
     }
-
-    .mp-line{
-      background:var(--mp-bg);
-      border-radius:3px;
-      display:inline;
-      padding:1px 4px;
-      line-height:1.05;
-    }
-    .cl-line{
-      color:var(--cl-color);
-      display:inline;
-      line-height:1.05;
-    }
-
     .hint{
       font-size:13px;
       color:#666;
@@ -159,7 +158,7 @@
       <div class="controls">
         <button class="btn btn-secondary" data-copy="incoming-text">Копировать всё</button>
       </div>
-      <div class="hint">Подсказка: поиск подсвечивает совпадения в отображаемом тексте.</div>
+      <div class="hint">Подсказка: пустая строка в тексте делает аккуратный отступ между блоками.</div>
     </div>
 
     <div id="outgoing" class="tab-content">
@@ -192,8 +191,7 @@
         Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
       </div>
       <div class="hint">
-        Можно хранить скрипт как HTML (например, &lt;span class="mp-line"&gt;...&lt;/span&gt; и &lt;br&gt;)
-        или как обычный текст с переносами строк.
+        Формат текста: начинай строку с “МП:” для подсветки; “К:” можно писать — он будет скрыт, текст останется.
       </div>
     </div>
   </div>
@@ -203,49 +201,41 @@
   const KEY_IN = "incomingScript";
   const KEY_OUT = "outgoingScript";
 
-  // ======================
-  // Заводские скрипты (до нужной части)
-  // ======================
+  // Заводские тексты: теперь в виде ПЛЕЙН-ТЕКСТА (без <br> и HTML)
   const defaultIncoming =
-`<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
-<span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
-<span class="cl-line">Сергей</span><br>
-<span class="mp-line">Приятно, Сергей, слушаю вас.</span><br>
-<span class="cl-line">(Озвучивает запрос)</span><br>
-<span class="mp-line">Отлично, для того чтобы посчитать для вас стоимость ангара и подготовить КП, мне нужно задать несколько вопросов, хорошо?</span><br>
-<span class="cl-line">Да, давайте.</span><br><br>
+`МП: Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.
+МП: Подскажите, пожалуйста, как могу к вам обращаться?
+К: Сергей
+МП: Приятно, Сергей, слушаю вас.
+К: (Озвучивает запрос)
+МП: Отлично, для того чтобы посчитать для вас стоимость ангара и подготовить КП, мне нужно задать несколько вопросов, хорошо?
+К: Да, давайте.
 
-<span class="mp-line">Сергей, подскажите, пожалуйста, в каком городе планируете строительство?</span><br>
-<span class="cl-line">Екатеринбург</span><br>
+МП: Сергей, подскажите, пожалуйста, в каком городе планируете строительство?
+К: Екатеринбург
+МП: Уточните, пожалуйста, длину и ширину здания.
+К: 20×25
+МП: Какая высота по стене нужна?
+К: 6 метров
+МП: Сергей, подскажите, какое будет назначение у здания?
+К: Склад лакокрасочной продукции
 
-<span class="mp-line">Уточните, пожалуйста, длину и ширину здания.</span><br>
-<span class="cl-line">20×25</span><br>
-
-<span class="mp-line">Какая высота по стене нужна?</span><br>
-<span class="cl-line">6 метров</span><br>
-
-<span class="mp-line">Сергей, подскажите, какое будет назначение у здания?</span><br>
-<span class="cl-line">Склад лакокрасочной продукции</span><br><br>
-
-<span class="mp-line">Уточните, кран-балка нужна будет?</span><br>
-<span class="cl-line">Да</span><br>
-
-<span class="mp-line">Принято. Какая грузоподъёмность кран-балки?</span><br>
-<span class="cl-line">5 тонн</span><br>
-
-<span class="mp-line">Ходить будет на всю длину?</span><br>
-<span class="cl-line">На всю длину</span><br>
-
-<span class="mp-line">Один кран или несколько?</span><br>
-<span class="cl-line">Один</span>`;
+МП: Уточните, кран-балка нужна будет?
+К: Да
+МП: Принято. Какая грузоподъёмность кран-балки?
+К: 5 тонн
+МП: Ходить будет на всю длину?
+К: На всю длину
+МП: Один кран или несколько?
+К: Один`;
 
   const defaultOutgoing =
-`<span class="mp-line">Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.</span><br>
-<span class="mp-line">Подскажите, пожалуйста, как могу к вам обращаться?</span><br>
-<span class="cl-line">(Имя)</span><br>
-<span class="mp-line">Вы ранее интересовались быстровозводимыми зданиями — актуально?</span><br>
-<span class="cl-line">(Да/нет)</span><br>
-<span class="mp-line">Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?</span>`;
+`МП: Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.
+МП: Подскажите, пожалуйста, как могу к вам обращаться?
+К: (Имя)
+МП: Вы ранее интересовались быстровозводимыми зданиями — актуально?
+К: (Да/нет)
+МП: Чтобы корректно посчитать стоимость и подготовить КП, задам несколько вопросов — удобно?`;
 
   function safeStorageGet(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -254,129 +244,91 @@
     try { localStorage.setItem(key, val); return true; } catch (_) { return false; }
   }
 
-  function escapeHtml(s) {
-    return String(s)
-      .replaceAll("&", "&amp;")
-      .replaceAll("<", "&lt;")
-      .replaceAll(">", "&gt;")
-      .replaceAll('"', "&quot;")
-      .replaceAll("'", "&#039;");
+  function stripClientPrefix(line) {
+    // Убираем только маркер клиента в начале строки: "К:", "К -", "К —" и т.п.
+    return String(line).replace(/^\s*К\s*([:\-—])\s*/i, "");
   }
 
-  function stripClientPrefixInPlainText(s) {
-    return String(s).replace(/(^|\n)\s*К\s*[-:—]\s*/gim, "$1");
+  function isMpLine(line) {
+    return /^\s*МП\s*([:\-—])\s*/i.test(line);
   }
 
-  function normalizeToHtml(raw) {
-    let s = String(raw ?? "");
-    s = stripClientPrefixInPlainText(s);
-
-    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(s);
-    if (looksLikeHtml) return s;
-
-    const lines = s.replace(/\r\n/g, "\n").split("\n");
-    const out = [];
-    for (const line of lines) {
-      const trimmed = line.trim();
-      if (!trimmed) { out.push(""); continue; }
-
-      const mp1 = trimmed.match(/^МП\s*[-:—]\s*(.*)$/i);
-      const mp2 = trimmed.match(/^\[МП\]\s*(.*)$/i);
-
-      if (mp1) out.push(`<span class="mp-line">${escapeHtml(mp1[1])}</span>`);
-      else if (mp2) out.push(`<span class="mp-line">${escapeHtml(mp2[1])}</span>`);
-      else out.push(`<span class="cl-line">${escapeHtml(line)}</span>`);
-    }
-    return out.join("<br>");
-  }
-
-  function buildSafeFragmentFromHtml(html) {
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = html;
-
-    const frag = document.createDocumentFragment();
-
-    function walk(node, parentFrag) {
-      if (node.nodeType === Node.TEXT_NODE) {
-        const cleaned = stripClientPrefixInPlainText(node.nodeValue);
-        parentFrag.appendChild(document.createTextNode(cleaned));
-        return;
-      }
-      if (node.nodeType !== Node.ELEMENT_NODE) return;
-
-      const tag = node.tagName.toUpperCase();
-
-      if (tag === "BR") {
-        parentFrag.appendChild(document.createElement("br"));
-        return;
-      }
-
-      if (tag === "SPAN" && node.classList.contains("mp-line")) {
-        const span = document.createElement("span");
-        span.className = "mp-line";
-        span.textContent = stripClientPrefixInPlainText(node.textContent || "");
-        parentFrag.appendChild(span);
-        return;
-      }
-
-      if (tag === "SPAN" && node.classList.contains("cl-line")) {
-        const span = document.createElement("span");
-        span.className = "cl-line";
-        span.textContent = stripClientPrefixInPlainText(node.textContent || "");
-        parentFrag.appendChild(span);
-        return;
-      }
-
-      if (node.childNodes && node.childNodes.length) {
-        for (const ch of node.childNodes) walk(ch, parentFrag);
-      }
-    }
-
-    for (const ch of wrapper.childNodes) walk(ch, frag);
-    return frag;
+  function stripMpPrefix(line) {
+    return String(line).replace(/^\s*МП\s*([:\-—])\s*/i, "");
   }
 
   function escapeRegExp(s) {
     return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function highlightElement(rootEl, query) {
+  function renderScriptLines(container, rawText, query) {
+    container.innerHTML = "";
+
     const q = String(query || "").trim();
-    if (!q) return;
+    const re = q ? new RegExp(escapeRegExp(q), "gi") : null;
 
-    const re = new RegExp(escapeRegExp(q), "gi");
-    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
-    const textNodes = [];
-    while (walker.nextNode()) textNodes.push(walker.currentNode);
+    const lines = String(rawText ?? "").replace(/\r\n/g, "\n").split("\n");
 
-    for (const tn of textNodes) {
-      const text = tn.nodeValue;
-      if (!text || !re.test(text)) continue;
+    for (const lineRaw of lines) {
+      const line = String(lineRaw);
 
-      re.lastIndex = 0;
-      const parts = [];
-      let last = 0;
-      let m;
-      while ((m = re.exec(text)) !== null) {
-        parts.push({ t: text.slice(last, m.index), h: false });
-        parts.push({ t: m[0], h: true });
-        last = m.index + m[0].length;
-        if (m[0].length === 0) break;
+      // Пустая строка = gap
+      if (line.trim() === "") {
+        const gap = document.createElement("div");
+        gap.className = "line gap";
+        container.appendChild(gap);
+        continue;
       }
-      parts.push({ t: text.slice(last), h: false });
 
-      const frag = document.createDocumentFragment();
-      for (const p of parts) {
-        if (!p.t) continue;
-        if (!p.h) frag.appendChild(document.createTextNode(p.t));
-        else {
-          const span = document.createElement("span");
-          span.className = "highlight";
-          span.textContent = p.t;
-          frag.appendChild(span);
+      const row = document.createElement("div");
+      row.className = "line";
+
+      let text = line;
+      let mode = "cl"; // по умолчанию — клиент/прочее
+
+      if (isMpLine(line)) {
+        mode = "mp";
+        text = stripMpPrefix(line);
+      } else {
+        text = stripClientPrefix(line);
+      }
+
+      const span = document.createElement("span");
+      if (mode === "mp") span.className = "mp-pill";
+      else span.className = "cl-text";
+
+      // Подсветка совпадений внутри строки
+      if (!re) {
+        span.textContent = text;
+      } else {
+        const parts = [];
+        let last = 0;
+        let m;
+        re.lastIndex = 0;
+
+        while ((m = re.exec(text)) !== null) {
+          const before = text.slice(last, m.index);
+          if (before) parts.push({t: before, h: false});
+          parts.push({t: m[0], h: true});
+          last = m.index + m[0].length;
+          if (m[0].length === 0) break;
+        }
+        const after = text.slice(last);
+        if (after) parts.push({t: after, h: false});
+
+        for (const p of parts) {
+          if (!p.h) span.appendChild(document.createTextNode(p.t));
+          else {
+            const mark = document.createElement("span");
+            mark.className = "highlight";
+            mark.textContent = p.t;
+            span.appendChild(mark);
+          }
         }
       }
-      tn.parentNode.replaceChild(frag, tn);
+
+      row.appendChild(span);
+      container.appendChild(row);
     }
   }
 
@@ -393,21 +345,14 @@
 
   function render(type) {
     const raw = getRaw(type);
-    const html = normalizeToHtml(raw);
     const query = document.getElementById(type + "-search")?.value?.trim() || "";
-
     const box = document.getElementById(type + "-text");
-    box.innerHTML = "";
-    box.appendChild(buildSafeFragmentFromHtml(html));
-
-    if (query) highlightElement(box, query);
+    renderScriptLines(box, raw, query);
   }
 
   function loadIntoEditor() {
-    const inc = getRaw("incoming");
-    const out = getRaw("outgoing");
-    document.getElementById("incoming-edit").value = inc;
-    document.getElementById("outgoing-edit").value = out;
+    document.getElementById("incoming-edit").value = getRaw("incoming");
+    document.getElementById("outgoing-edit").value = getRaw("outgoing");
   }
 
   function switchTab(name) {
@@ -447,7 +392,6 @@
     const i = getRaw("incoming");
     const o = getRaw("outgoing");
     const blob = new Blob([`INCOMING:\n${i}\n\nOUTGOING:\n${o}\n`], { type: "text/plain" });
-
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
     a.download = "scripts-backup.txt";
