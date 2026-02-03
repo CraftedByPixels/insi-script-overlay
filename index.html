@@ -14,7 +14,6 @@
       --highlight:#ff0;
       --mp-bg:#c2f0fc;
       --cl-color:#555;
-      --muted:#666;
     }
     body{
       font-family:'Segoe UI',sans-serif;
@@ -24,7 +23,7 @@
       padding:15px;
     }
     .container{
-      max-width:980px;
+      max-width:900px;
       margin:auto;
       background:var(--panel-bg);
       padding:20px;
@@ -138,103 +137,8 @@
     }
     .hint{
       font-size:13px;
-      color:var(--muted);
+      color:#666;
       margin:8px 0 0;
-    }
-
-    /* Самоконтроль */
-    .score-wrap{
-      background:#fafafa;
-      border:1px solid var(--border-color);
-      border-radius:10px;
-      padding:14px;
-    }
-    .score-head{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:center;
-      justify-content:space-between;
-      margin-bottom:12px;
-    }
-    .score-title{
-      font-size:18px;
-      font-weight:700;
-      margin:0;
-    }
-    .score-summary{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      align-items:center;
-      color:var(--muted);
-      font-size:14px;
-    }
-    .pill{
-      background:#fff;
-      border:1px solid var(--border-color);
-      border-radius:999px;
-      padding:6px 10px;
-      color:#333;
-      font-weight:700;
-      font-size:14px;
-      white-space:nowrap;
-    }
-    .score-table{
-      width:100%;
-      border-collapse:collapse;
-      background:#fff;
-      border:1px solid var(--border-color);
-      border-radius:10px;
-      overflow:hidden;
-    }
-    .score-table th, .score-table td{
-      border-bottom:1px solid var(--border-color);
-      padding:10px 10px;
-      vertical-align:top;
-      font-size:14px;
-    }
-    .score-table th{
-      text-align:left;
-      background:#f2f3f7;
-      font-weight:700;
-    }
-    .score-table tr:last-child td{ border-bottom:none; }
-    .score-select{
-      width:76px;
-      padding:6px 8px;
-      border:1px solid var(--border-color);
-      border-radius:8px;
-      font-size:14px;
-      background:#fff;
-    }
-    .score-note{
-      width:100%;
-      min-height:34px;
-      resize:vertical;
-      padding:8px 10px;
-      border:1px solid var(--border-color);
-      border-radius:8px;
-      font-size:14px;
-      box-sizing:border-box;
-    }
-    .score-actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      margin-top:12px;
-      align-items:center;
-      justify-content:space-between;
-    }
-    .score-actions .left, .score-actions .right{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-      align-items:center;
-    }
-    .small{
-      font-size:12px;
-      color:var(--muted);
     }
   </style>
 </head>
@@ -243,7 +147,6 @@
     <div class="tabs">
       <button class="tab-btn active" data-tab="incoming">Входящий (Ctrl+I)</button>
       <button class="tab-btn" data-tab="outgoing">Исходящий (Ctrl+O)</button>
-      <button class="tab-btn" data-tab="score">Самоконтроль</button>
       <button class="tab-btn" data-tab="edit">Редактирование</button>
     </div>
 
@@ -265,42 +168,6 @@
       <div id="outgoing-text" class="script-box"></div>
       <div class="controls">
         <button class="btn btn-secondary" data-copy="outgoing-text">Копировать всё</button>
-      </div>
-    </div>
-
-    <!-- Самоконтроль -->
-    <div id="score" class="tab-content">
-      <div class="score-wrap">
-        <div class="score-head">
-          <h3 class="score-title">Самоконтроль звонка</h3>
-          <div class="score-summary">
-            <span class="pill" id="score-total">Итого: 0</span>
-            <span class="pill" id="score-max">Максимум: 0</span>
-            <span class="pill" id="score-percent">Процент: 0%</span>
-          </div>
-        </div>
-
-        <table class="score-table" aria-label="Самоконтроль звонка">
-          <thead>
-            <tr>
-              <th style="width:52%;">Критерий</th>
-              <th style="width:12%;">Балл</th>
-              <th>Комментарий</th>
-            </tr>
-          </thead>
-          <tbody id="score-body"></tbody>
-        </table>
-
-        <div class="score-actions">
-          <div class="left">
-            <button class="btn btn-success" id="score-save">Сохранить самоконтроль</button>
-            <button class="btn btn-secondary" id="score-reset">Сбросить оценки</button>
-          </div>
-          <div class="right">
-            <button class="btn btn-primary" id="score-copy">Копировать отчёт</button>
-            <span class="small">Шкала: 0 — нет, 1 — частично, 2 — да.</span>
-          </div>
-        </div>
       </div>
     </div>
 
@@ -333,7 +200,6 @@
 (() => {
   const KEY_IN = "incomingScript";
   const KEY_OUT = "outgoingScript";
-  const KEY_SCORE = "callSelfScore_v1";
 
   const defaultIncoming =
 `МП: Здравствуйте! Компания ИНСИ. Меня зовут Рыкунов Андрей, я руководитель проекта.
@@ -351,8 +217,115 @@
 МП: Какая высота по стене нужна?
 К: 6 метров
 МП: Сергей, подскажите, какое будет назначение у здания?
-К: Склад лакокрасочной продукции`;
+К: Склад лакокрасочной продукции
 
+МП: Уточните, кран-балка нужна будет?
+К: Да
+МП: Принято. Какая грузоподъёмность кран-балки?
+К: 5 тонн
+МП: Ходить будет на всю длину?
+К: На всю длину
+МП: Один кран или несколько?
+К: Один
+
+МП: Теперь про утепление: сэндвич берём на стены 100 и крыша 150, или нужна другая толщина?
+К: Да, подойдёт, стены 100 и крыша 150
+
+МП: По крыше планируете двускатную или односкатную?
+К: Давайте двускатную
+
+МП: Перейдём к проёмам. Ворота — сколько их будет и какого размера?
+К: Двое ворот, размером 3×4
+
+МП: Хорошо. Двери?
+К: Две двери, рядом с воротами
+
+МП: Хорошо. Окна — как планируете их расположение?
+К: Не знаю, а как лучше?
+
+МП: Можно сделать отдельные окна, однако обычно на складах делают ленточное остекление по всему периметру, чтобы было больше естественного света на складе и можно было сэкономить на электричестве.
+К: Хорошо, пусть будет ленточное остекление
+
+МП: Сергей, будут какие-нибудь дополнительные особенности, которые нам нужно учесть?
+К: Да, смотрите: рядом с входом, по правой стороне нужно будет сделать несколько кабинетов
+
+МП: Сколько кабинетов и какого размера?
+К: 4 кабинета, пусть каждый будет 2×3 метра
+
+МП: Отлично, учтём и это. По техническим параметрам всё, осталось уточнить по монтажу и доставке.
+
+МП: Монтаж посчитать?
+К: Да, только отдельным счётом
+
+МП: Доставку до Екатеринбурга считаем?
+К: Да, но тоже отдельно
+
+МП: По этим моментам всё. Сергей, в какие сроки планируете реализовать проект?
+К: В этом квартале
+
+МП: И последний вопрос: у вас уже выделено финансирование для строительства объекта?
+К: В целом да, решение о финансировании уже есть, осталось определиться с бюджетом
+
+МП: Сергей, спасибо за ответы. Нам нужно 2–3 рабочих дня, чтобы сделать предварительный расчёт и оформить КП. Насколько вам срочно?
+К: 2–3 дня норм
+
+МП: Тогда предлагаю сразу запланировать видеозвонок, чтобы подробно обсудить КП. В какое время в четверг вам удобно созвониться по видео?
+К: Давайте во второй половине дня
+
+МП: Тогда в четверг в 15:00, время Екатеринбург, хорошо?
+К: Да
+
+МП: На встрече ещё будут ваши коллеги, которым стоит презентовать наше КП, или только вы?
+К: Только я
+
+МП: Принято!
+
+К: Отправьте КП мне на почту
+
+МП: Конечно, я отправлю КП на почту перед встречей, потому что встреча нужна для детального обсуждения КП и параметров, которые влияют на цену.
+МП: Например, снеговой район определяет расчётную нагрузку снега на кровлю.
+МП: Уровень ответственности влияет на требования к надёжности и долговечности конструкций.
+МП: Ветровой район влияет на выбор толщины профилей, способ крепления и общую устойчивость конструкции.
+МП: В какое время в четверг вам удобно будет созвониться по видео?
+
+К: Давайте утром, часов в 11
+МП: Отлично, зафиксировал. На встрече ещё будут ваши коллеги или только вы?
+К: Только я
+МП: Принято!
+
+МП: По email: если я вам в Telegram или WhatsApp напишу, вы сможете отправить email, чтобы сейчас не диктовать?
+К: Да, конечно
+
+МП: Тогда продиктуйте, пожалуйста, номер телефона, к которому привязаны Telegram или WhatsApp
+К: 8 999 989 88 88
+
+МП: Спасибо, зафиксировал.
+
+МП: Два слова о том, как мы работаем: сейчас делаем предварительный расчёт, потом заключаем договор и выставляем счёт.
+МП: После оплаты через 7 дней выдадим анкерное поле — вы сможете заливать фундамент.
+МП: Пока вы заливаете фундамент, мы готовим проект и производим комплект для сборки.
+МП: После производства отгружаем каркас, собираем и отгружаем сэндвич.
+
+МП: Сергей, есть ли у вас вопросы?
+К: Пока нет
+
+МП: Подскажите, с какими конкурентными предложениями будете нас сравнивать?
+К: Пока только к вам обратился
+
+К: Кроме ангара из ЛСТК рассматриваю варианты из чёрного металла или арочные
+МП: Понял, эти варианты тоже можем обсудить на встрече
+
+К: Вот от Евраза тоже жду предложение
+МП: Ясно, тогда на встрече обсудим и этот момент
+
+МП: Итак, Сергей, подведём итог: мы посчитаем ангар по вашим параметрам, отдельно посчитаем монтаж и доставку до Екатеринбурга, и в четверг в 15:00 обсудим КП на видеовстрече — всё верно?
+К: Да
+
+МП: Тогда до встречи и спасибо за обращение в нашу компанию.
+К: Спасибо, до свидания
+МП: Всего доброго!`;
+
+  // === Исходящий (по твоему сценарию, в том же стиле, без цифр/пунктов) ===
   const defaultOutgoing =
 `К: Алло / Слушаю / Да
 МП: Здравствуйте.
@@ -365,7 +338,143 @@
 К: Олег Николаевич
 
 МП: Олег Николаевич, вам удобно сейчас ответить на мои вопросы, чтобы я мог всё вам рассчитать?
-К: Да, удобно`;
+К: Да, удобно
+
+МП: Подскажите, какое здание вы планировали построить?
+К: Ангар, площадью примерно 450–500 квадратов
+
+МП: Отлично. Тогда уточню параметры для расчёта.
+
+МП: В каком городе планируете строительство?
+К: Екатеринбург
+
+МП: Уточните, пожалуйста, длину и ширину.
+К: 20×25
+
+МП: Какая высота по стене нужна?
+К: 6 метров
+
+МП: Олег Николаевич, подскажите, какое будет назначение у здания?
+К: Склад лакокрасочной продукции
+
+МП: Уточните, кран-балка нужна будет?
+К: Да
+
+МП: Какая грузоподъёмность кран-балки?
+К: 5 тонн
+
+МП: Ходить будет на всю длину?
+К: На всю длину
+
+МП: Один кран или несколько?
+К: Один
+
+МП: Теперь про утепление: сэндвич берём на стены 100 и крыша 150, или нужна другая толщина?
+К: Да, подойдёт, стены 100 и крыша 150
+
+МП: По крыше планируете двускатную или односкатную?
+К: Давайте двускатную
+
+МП: Перейдём к проёмам. Ворота — сколько их будет и какого размера?
+К: Двое ворот, размером 3×4
+
+МП: Хорошо. Двери?
+К: Две двери, рядом с воротами
+
+МП: Хорошо. Окна — как планируете их расположение?
+К: Не знаю, а как лучше?
+
+МП: Можно сделать отдельные окна, однако обычно на складах делают ленточное остекление по всему периметру, чтобы было больше естественного света на складе и можно было сэкономить на электричестве.
+К: Хорошо, пусть будет ленточное остекление
+
+МП: Олег Николаевич, будут какие-нибудь дополнительные особенности, которые нам нужно учесть?
+К: Да, рядом с входом, по правой стороне нужно будет сделать несколько кабинетов
+
+МП: Сколько кабинетов и какого размера?
+К: 4 кабинета, пусть каждый будет 2×3 метра
+
+МП: Отлично, учтём. По техническим параметрам всё, осталось уточнить по монтажу и доставке.
+
+МП: Монтаж посчитать?
+К: Да, только отдельным счётом
+
+МП: Доставку до Екатеринбурга считаем?
+К: Да, но тоже отдельно
+
+МП: Олег Николаевич, в какие сроки планируете реализовать проект?
+К: В этом квартале
+
+МП: И последний вопрос: у вас уже выделено финансирование для строительства объекта?
+К: В целом да, решение о финансировании уже есть, осталось определиться с бюджетом
+
+МП: Олег Николаевич, спасибо за ответы. Нам нужно 2–3 рабочих дня, чтобы сделать предварительный расчёт и оформить КП. Насколько вам срочно?
+К: 2–3 дня норм
+
+МП: Тогда предлагаю сразу запланировать видеозвонок, чтобы подробно обсудить КП. В какое время в четверг вам удобно созвониться по видео?
+К: Давайте во второй половине дня
+
+МП: Тогда в четверг в 15:00, время Екатеринбург, хорошо?
+К: Да
+
+МП: На встрече ещё будут ваши коллеги, которым стоит презентовать наше КП, или только вы?
+К: Только я
+
+МП: Принято!
+
+К: Отправьте КП мне на почту
+
+МП: Конечно, отправлю КП на почту перед встречей, потому что встреча нужна для обсуждения параметров, которые влияют на цену.
+МП: Например, снеговой район влияет на расчётную нагрузку снега на кровлю, ветровой район влияет на крепления и устойчивость, уровень ответственности влияет на требования к надёжности.
+МП: В какое время в четверг вам удобно будет созвониться по видео?
+
+К: Давайте утром, часов в 11
+
+МП: Отлично, зафиксировал. На встрече будут коллеги или только вы?
+К: Только я
+
+МП: Принято! Если я вам в Telegram или WhatsApp напишу, сможете отправить email, чтобы сейчас не диктовать?
+К: Да, конечно
+
+МП: Тогда продиктуйте, пожалуйста, номер телефона, к которому привязаны Telegram или WhatsApp
+К: 8 999 989 88 88
+
+МП: Спасибо, зафиксировал.
+
+МП: Два слова о том, как мы работаем: сейчас делаем предварительный расчёт, потом заключаем договор и выставляем счёт. После оплаты через 7 дней выдадим анкерное поле — сможете заливать фундамент. Пока вы заливаете фундамент, мы готовим проект и производим комплект. После производства отгружаем каркас и сэндвич.
+
+МП: Олег Николаевич, есть ли у вас вопросы?
+К: Пока нет
+
+МП: Подскажите, с какими конкурентными предложениями будете нас сравнивать?
+К: Пока только к вам обратился
+
+К: Кроме ангара из ЛСТК рассматриваю варианты из чёрного металла или арочные
+МП: Понял, тогда на встрече обсудим и эти варианты — мы тоже такие решения делаем
+
+К: Вот от Евраза тоже жду предложение
+МП: Ясно, тогда на встрече обсудим и этот момент
+
+МП: Хорошо, тогда подведём итог: мы посчитаем ангар по вашим параметрам, отдельно посчитаем монтаж и доставку до Екатеринбурга, и в четверг в 15:00 обсудим КП на видеовстрече — всё верно?
+К: Да
+
+МП: Тогда до встречи и спасибо за обращение в нашу компанию.
+К: Спасибо, до свидания
+МП: Всего доброго!
+
+МП: Если клиент не готов отвечать и просит перейти в мессенджер
+К: Владимир, давайте в Telegram, я всё туда вышлю
+МП: Да, конечно. Только один момент: пока не перешли в Telegram, давайте сразу договоримся о видеовстрече, на которой обсудим КП. Вам удобно в следующий четверг в первой половине дня?
+К: Да, хорошо
+МП: Договорились. Олег Николаевич, к этому номеру у вас привязан Telegram?
+К: Да
+МП: Отлично, тогда до связи в Telegram, до свидания!
+К: До свидания!
+
+К: Давайте это обсудим в Telegram
+МП: Договорились. Олег Николаевич, к этому номеру у вас привязан Telegram?
+К: Да
+МП: Хорошо, тогда до связи в Telegram, до свидания!
+К: До свидания!`;
 
   function safeStorageGet(key) {
     try { return localStorage.getItem(key); } catch (_) { return null; }
@@ -487,7 +596,6 @@
     if (name === "incoming") render("incoming");
     if (name === "outgoing") render("outgoing");
     if (name === "edit") loadIntoEditor();
-    if (name === "score") renderScore();
   }
 
   async function copyBoxText(boxId) {
@@ -530,195 +638,6 @@
     loadIntoEditor();
   }
 
-  // =========================
-  // Самоконтроль (0/1/2 + сумма)
-  // =========================
-  const scoreItems = [
-    "Приветствие и представление прозвучали чётко.",
-    "Спросил, как обращаться, и использовал имя клиента.",
-    "Выслушал запрос клиента и подтвердил понимание.",
-    "Взял разрешение задавать вопросы для расчёта.",
-    "Собрал город строительства.",
-    "Собрал габариты (длина×ширина, высота).",
-    "Уточнил назначение здания.",
-    "Уточнил кран-балку (если нужно — доп. параметры).",
-    "Уточнил утепление (стены/кровля).",
-    "Уточнил тип крыши.",
-    "Собрал проёмы (ворота/двери/окна).",
-    "Уточнил дополнительные особенности/перегородки.",
-    "Уточнил монтаж (включать/отдельно).",
-    "Уточнил доставку (включать/отдельно).",
-    "Уточнил сроки реализации.",
-    "Уточнил финансирование/готовность бюджета.",
-    "Зафиксировал срок подготовки КП (2–3 дня) и срочность.",
-    "Назначил видеовстречу (дата/время) или чёткий следующий шаг.",
-    "Уточнил участников встречи (ЛПР/коллеги).",
-    "Уточнил конкурентов/с чем сравнивают.",
-    "Подвёл итог договорённостей и завершил разговор."
-  ];
-
-  function scoreLoad() {
-    try {
-      const raw = safeStorageGet(KEY_SCORE);
-      if (!raw) return null;
-      return JSON.parse(raw);
-    } catch (_) {
-      return null;
-    }
-  }
-
-  function scoreSave(state) {
-    try {
-      safeStorageSet(KEY_SCORE, JSON.stringify(state));
-      return true;
-    } catch (_) {
-      return false;
-    }
-  }
-
-  function scoreGetStateFromUI() {
-    const tbody = document.getElementById("score-body");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const items = rows.map((tr, idx) => {
-      const sel = tr.querySelector("select");
-      const note = tr.querySelector("textarea");
-      return {
-        i: idx,
-        score: Number(sel.value),
-        note: String(note.value || "")
-      };
-    });
-    return { items, savedAt: new Date().toISOString() };
-  }
-
-  function scoreApplyStateToUI(state) {
-    const tbody = document.getElementById("score-body");
-    const rows = Array.from(tbody.querySelectorAll("tr"));
-    const map = new Map();
-    if (state && Array.isArray(state.items)) {
-      for (const it of state.items) map.set(it.i, it);
-    }
-    rows.forEach((tr, idx) => {
-      const sel = tr.querySelector("select");
-      const note = tr.querySelector("textarea");
-      const it = map.get(idx);
-      if (it) {
-        sel.value = String(it.score ?? 0);
-        note.value = String(it.note ?? "");
-      } else {
-        sel.value = "0";
-        note.value = "";
-      }
-    });
-  }
-
-  function scoreRecalc() {
-    const tbody = document.getElementById("score-body");
-    const sels = Array.from(tbody.querySelectorAll("select"));
-    const total = sels.reduce((sum, s) => sum + Number(s.value || 0), 0);
-    const max = scoreItems.length * 2;
-    const percent = max ? Math.round((total / max) * 100) : 0;
-
-    document.getElementById("score-total").textContent = `Итого: ${total}`;
-    document.getElementById("score-max").textContent = `Максимум: ${max}`;
-    document.getElementById("score-percent").textContent = `Процент: ${percent}%`;
-  }
-
-  function scoreBuildTableIfNeeded() {
-    const tbody = document.getElementById("score-body");
-    if (tbody.dataset.built === "1") return;
-
-    tbody.innerHTML = "";
-    scoreItems.forEach((txt, idx) => {
-      const tr = document.createElement("tr");
-
-      const td1 = document.createElement("td");
-      td1.textContent = txt;
-
-      const td2 = document.createElement("td");
-      const sel = document.createElement("select");
-      sel.className = "score-select";
-      ["0","1","2"].forEach(v => {
-        const opt = document.createElement("option");
-        opt.value = v;
-        opt.textContent = v;
-        sel.appendChild(opt);
-      });
-      sel.value = "0";
-      sel.addEventListener("change", scoreRecalc);
-      td2.appendChild(sel);
-
-      const td3 = document.createElement("td");
-      const note = document.createElement("textarea");
-      note.className = "score-note";
-      note.placeholder = "Комментарий (опционально)";
-      td3.appendChild(note);
-
-      tr.appendChild(td1);
-      tr.appendChild(td2);
-      tr.appendChild(td3);
-      tbody.appendChild(tr);
-    });
-
-    tbody.dataset.built = "1";
-  }
-
-  function renderScore() {
-    scoreBuildTableIfNeeded();
-    const saved = scoreLoad();
-    if (saved) scoreApplyStateToUI(saved);
-    scoreRecalc();
-  }
-
-  async function scoreCopyReport() {
-    const state = scoreGetStateFromUI();
-    const total = state.items.reduce((s, it) => s + Number(it.score || 0), 0);
-    const max = scoreItems.length * 2;
-    const percent = max ? Math.round((total / max) * 100) : 0;
-
-    const lines = [];
-    lines.push(`Самоконтроль звонка`);
-    lines.push(`Итого: ${total} / ${max} (${percent}%)`);
-    lines.push(``);
-
-    state.items.forEach((it, idx) => {
-      const crit = scoreItems[idx];
-      const sc = it.score;
-      const note = (it.note || "").trim();
-      lines.push(`${idx + 1}. [${sc}] ${crit}${note ? " — " + note : ""}`);
-    });
-
-    await copyPlainText(lines.join("\n"));
-  }
-
-  async function copyPlainText(text) {
-    try {
-      if (window.isSecureContext && navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(text);
-      } else {
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        ta.remove();
-      }
-      alert("Скопировано!");
-    } catch (e) {
-      alert("Не удалось скопировать (проверь HTTPS/права браузера).");
-    }
-  }
-
-  function scoreResetUI() {
-    const tbody = document.getElementById("score-body");
-    Array.from(tbody.querySelectorAll("select")).forEach(s => s.value = "0");
-    Array.from(tbody.querySelectorAll("textarea")).forEach(t => t.value = "");
-    scoreRecalc();
-  }
-
-  // =========================
-  // Wiring
-  // =========================
   document.addEventListener("DOMContentLoaded", () => {
     render("incoming");
     render("outgoing");
@@ -750,22 +669,6 @@
     document.getElementById("download-btn").addEventListener("click", downloadAll);
     document.getElementById("reset-btn").addEventListener("click", resetToDefault);
 
-    // Самоконтроль: кнопки
-    document.getElementById("score-save").addEventListener("click", () => {
-      const state = scoreGetStateFromUI();
-      scoreSave(state);
-      alert("Самоконтроль сохранён!");
-    });
-
-    document.getElementById("score-reset").addEventListener("click", () => {
-      if (!confirm("Сбросить оценки (вкладка Самоконтроль)?")) return;
-      scoreResetUI();
-      try { localStorage.removeItem(KEY_SCORE); } catch (_) {}
-    });
-
-    document.getElementById("score-copy").addEventListener("click", scoreCopyReport);
-
-    // hotkeys
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming"); }
       if (e.ctrlKey && e.code === "KeyO") { e.preventDefault(); switchTab("outgoing"); }
