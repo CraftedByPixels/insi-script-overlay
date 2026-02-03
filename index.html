@@ -22,6 +22,36 @@
       margin:0;
       padding:15px;
     }
+
+    /* === Заголовок над программой === */
+    .app-header{
+      max-width:900px;
+      margin:0 auto 12px;
+      padding:14px 16px;
+      border-radius:14px;
+      background:linear-gradient(135deg, rgba(0,123,255,0.12), rgba(40,167,69,0.10));
+      border:1px solid var(--border-color);
+      box-shadow:0 4px 15px rgba(0,0,0,0.06);
+    }
+    .app-header-inner{
+      display:flex;
+      align-items:baseline;
+      justify-content:space-between;
+      gap:10px;
+      flex-wrap:wrap;
+    }
+    .app-title{
+      font-size:22px;
+      font-weight:900;
+      letter-spacing:0.2px;
+      color:var(--text-color);
+    }
+    .app-title .dot{ color:var(--primary); }
+    .app-subtitle{
+      font-size:12px;
+      color:#666;
+    }
+
     .container{
       max-width:900px;
       margin:auto;
@@ -248,6 +278,15 @@
   </style>
 </head>
 <body>
+
+  <!-- Заголовок -->
+  <div class="app-header">
+    <div class="app-header-inner">
+      <div class="app-title">Ангары<span class="dot">.</span> Скрипты</div>
+      <div class="app-subtitle">ИНСИ • Входящий / Исходящий / Самоконтроль</div>
+    </div>
+  </div>
+
   <div class="container">
     <div class="tabs">
       <button class="tab-btn active" data-tab="incoming">Входящий (Ctrl+I)</button>
@@ -880,7 +919,6 @@
     document.getElementById("score-max").textContent = `Максимум: ${max}`;
     document.getElementById("score-percent").textContent = `Процент: ${percent}%`;
 
-    // Градация как в примере (пороговые значения можно менять)
     let grade = "—";
     if (total >= 62) grade = "100%";
     else if (total >= 50) grade = "80%";
@@ -903,7 +941,6 @@
     if (st.agent || st.date) lines.push(`${(st.agent || "").trim()} ${(st.date || "").trim()}`.trim());
     lines.push("");
 
-    // Печатаем как в таблице: этапы и пункты с оценкой
     let rowIndex = 0;
     for (const def of scoreRows) {
       if (def.type === "stage") {
@@ -920,7 +957,6 @@
     lines.push("");
     lines.push(`Итог: ${total} (из ${max}, ${percent}%)`);
 
-    // copy
     try {
       if (window.isSecureContext && navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(lines.join("\n"));
@@ -1038,7 +1074,6 @@
     document.getElementById("download-btn").addEventListener("click", downloadAll);
     document.getElementById("reset-btn").addEventListener("click", resetToDefault);
 
-    // Самоконтроль кнопки
     document.getElementById("score-save").addEventListener("click", () => {
       const st = scoreGetStateFromUI();
       if (scoreSave(st)) alert("Самоконтроль сохранён!");
@@ -1049,10 +1084,6 @@
       scoreReset();
     });
     document.getElementById("score-copy").addEventListener("click", scoreCopyReport);
-
-    // Автопересчёт при вводе имени/даты (не влияет на баллы, просто чтобы сохранялось)
-    document.getElementById("score-agent").addEventListener("input", () => {});
-    document.getElementById("score-date").addEventListener("input", () => {});
 
     document.addEventListener("keydown", (e) => {
       if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming"); }
