@@ -1,389 +1,461 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>INSI Script Overlay</title>
   <style>
-    :root {
-      --bg-color: #f4f4f9;
-      --panel-bg: #ffffff;
-      --primary: #007bff;
-      --text-color: #333;
-      --border-color: #ddd;
-      --highlight: #ff0;
+    :root{
+      --bg-color:#f4f4f9;
+      --panel-bg:#ffffff;
+      --primary:#007bff;
+      --text-color:#333;
+      --border-color:#ddd;
+      --highlight:#ff0;
+      --mp-bg:#c2f0fc;
     }
-    body {
-      font-family: 'Segoe UI', sans-serif;
-      background: var(--bg-color);
-      color: var(--text-color);
-      margin: 0;
-      padding: 15px;
+    body{
+      font-family:'Segoe UI',sans-serif;
+      background:var(--bg-color);
+      color:var(--text-color);
+      margin:0;
+      padding:15px;
     }
-    .container {
-      max-width: 900px;
-      margin: auto;
-      background: var(--panel-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-      border: 1px solid var(--border-color);
+    .container{
+      max-width:900px;
+      margin:auto;
+      background:var(--panel-bg);
+      padding:20px;
+      border-radius:12px;
+      box-shadow:0 4px 15px rgba(0,0,0,0.1);
+      border:1px solid var(--border-color);
     }
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-      border-bottom: 2px solid var(--border-color);
-      padding-bottom: 10px;
+    .tabs{
+      display:flex;
+      gap:10px;
+      margin-bottom:20px;
+      border-bottom:2px solid var(--border-color);
+      padding-bottom:10px;
+      flex-wrap:wrap;
     }
-    .tab-btn {
-      padding: 10px 20px;
-      border: none;
-      background: #eee;
-      cursor: pointer;
-      border-radius: 8px;
-      font-weight: 600;
-      transition: 0.3s;
+    .tab-btn{
+      padding:10px 20px;
+      border:none;
+      background:#eee;
+      cursor:pointer;
+      border-radius:8px;
+      font-weight:600;
+      transition:0.3s;
+      user-select:none;
     }
-    .tab-btn.active {
-      background: var(--primary);
-      color: white;
+    .tab-btn.active{ background:var(--primary); color:#fff; }
+    .tab-content{ display:none; }
+    .tab-content.active{ display:block; }
+
+    .search-container{
+      margin-bottom:15px;
+      display:flex;
+      gap:10px;
     }
-    .tab-content {
-      display: none;
+    input[type="text"], textarea{
+      width:100%;
+      padding:12px;
+      border:1px solid var(--border-color);
+      border-radius:8px;
+      font-size:16px;
+      box-sizing:border-box;
     }
-    .tab-content.active {
-      display: block;
+    textarea{
+      height:340px;
+      font-family:monospace;
+      line-height:1.5;
+      resize:vertical;
+      white-space:pre-wrap;
     }
-    .search-container {
-      margin-bottom: 15px;
-      display: flex;
-      gap: 10px;
+
+    .script-box{
+      background:#fafafa;
+      padding:20px;
+      border:1px solid var(--border-color);
+      border-radius:8px;
+      min-height:300px;
+      white-space:pre-wrap;
+      font-size:17px;
+      line-height:1.6;
+      overflow-wrap:anywhere;
     }
-    input[type="text"], textarea {
-      width: 100%;
-      padding: 12px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      font-size: 16px;
-      box-sizing: border-box;
+    .highlight{
+      background:var(--highlight);
+      font-weight:700;
+      border-radius:3px;
+      padding:0 2px;
     }
-    textarea {
-      height: 400px;
-      font-family: monospace;
-      line-height: 1.5;
-      resize: vertical;
+    .controls{
+      margin-top:15px;
+      display:flex;
+      gap:10px;
+      flex-wrap:wrap;
     }
-    .script-box {
-      background: #fafafa;
-      padding: 20px;
-      border: 1px solid var(--border-color);
-      border-radius: 8px;
-      min-height: 300px;
-      white-space: pre-wrap;
-      font-size: 17px;
-      line-height: 1.6;
+    .btn{
+      padding:10px 18px;
+      border:none;
+      border-radius:6px;
+      cursor:pointer;
+      font-weight:700;
+      transition:0.2s;
+      user-select:none;
     }
-    .highlight {
-      background: var(--highlight);
-      font-weight: bold;
-      border-radius: 3px;
+    .btn:active{ transform:translateY(1px); }
+    .btn-primary{ background:var(--primary); color:#fff; }
+    .btn-success{ background:#28a745; color:#fff; }
+    .btn-secondary{ background:#6c757d; color:#fff; }
+
+    .hotkeys-info{
+      font-size:12px;
+      color:#777;
+      margin-top:10px;
     }
-    .controls {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
+    .mp-line{
+      background:var(--mp-bg);
+      padding:2px 4px;
+      border-radius:3px;
+      display:inline;
     }
-    .btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-weight: bold;
-      transition: 0.2s;
-    }
-    .btn-primary {
-      background: var(--primary);
-      color: white;
-    }
-    .btn-success {
-      background: #28a745;
-      color: white;
-    }
-    .btn-secondary {
-      background: #6c757d;
-      color: white;
-    }
-    .hotkeys-info {
-      font-size: 12px;
-      color: #777;
-      margin-top: 10px;
-    }
-    .mp-line {
-      background: #c2f0fc;
-      padding: 2px 4px;
-      border-radius: 3px;
-      display: inline;
+    .hint{
+      font-size:13px;
+      color:#666;
+      margin:8px 0 0;
     }
   </style>
 </head>
 <body>
-<div class="container">
-  <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('incoming', this)">Входящий (Ctrl+I)</button>
-    <button class="tab-btn" onclick="switchTab('outgoing', this)">Исходящий (Ctrl+O)</button>
-    <button class="tab-btn" onclick="switchTab('edit', this)">Редактирование</button>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="incoming">Входящий (Ctrl+I)</button>
+      <button class="tab-btn" data-tab="outgoing">Исходящий (Ctrl+O)</button>
+      <button class="tab-btn" data-tab="edit">Редактирование</button>
+    </div>
+
+    <div id="incoming" class="tab-content active">
+      <div class="search-container">
+        <input type="text" id="incoming-search" placeholder="Поиск по фразе..." autocomplete="off">
+      </div>
+      <div id="incoming-text" class="script-box"></div>
+      <div class="controls">
+        <button class="btn btn-secondary" data-copy="incoming-text">Копировать всё</button>
+      </div>
+      <div class="hint">Подсказка: поиск подсвечивает совпадения в отображаемом тексте.</div>
+    </div>
+
+    <div id="outgoing" class="tab-content">
+      <div class="search-container">
+        <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." autocomplete="off">
+      </div>
+      <div id="outgoing-text" class="script-box"></div>
+      <div class="controls">
+        <button class="btn btn-secondary" data-copy="outgoing-text">Копировать всё</button>
+      </div>
+    </div>
+
+    <div id="edit" class="tab-content">
+      <h3>Настройка скриптов</h3>
+
+      <p>Входящий скрипт:</p>
+      <textarea id="incoming-edit"></textarea>
+      <button class="btn btn-success" data-save="incoming">Сохранить входящий</button>
+
+      <p>Исходящий скрипт:</p>
+      <textarea id="outgoing-edit"></textarea>
+      <button class="btn btn-success" data-save="outgoing">Сохранить исходящий</button>
+
+      <div class="controls">
+        <button class="btn btn-primary" id="download-btn">Скачать бэкап (TXT)</button>
+        <button class="btn btn-secondary" id="reset-btn">Сбросить к заводским</button>
+      </div>
+
+      <div class="hotkeys-info">
+        Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
+      </div>
+      <div class="hint">
+        Можно хранить скрипт как HTML (например, &lt;span class="mp-line"&gt;...&lt;/span&gt; и &lt;br&gt;)
+        или как обычный текст с переносами строк.
+      </div>
+    </div>
   </div>
-  <div id="incoming" class="tab-content active">
-    <div class="search-container">
-      <input type="text" id="incoming-search" placeholder="Поиск по фразе..." oninput="searchInScript('incoming')">
-    </div>
-    <div id="incoming-text" class="script-box"></div>
-    <div class="controls">
-      <button class="btn btn-secondary" onclick="copyToClipboard('incoming-text')">Копировать всё</button>
-    </div>
-  </div>
-  <div id="outgoing" class="tab-content">
-    <div class="search-container">
-      <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." oninput="searchInScript('outgoing')">
-    </div>
-    <div id="outgoing-text" class="script-box"></div>
-    <div class="controls">
-      <button class="btn btn-secondary" onclick="copyToClipboard('outgoing-text')">Копировать всё</button>
-    </div>
-  </div>
-  <div id="edit" class="tab-content">
-    <h3>Настройка скриптов</h3>
-    <p>Входящий скрипт:</p>
-    <textarea id="incoming-edit"></textarea>
-    <button class="btn btn-success" onclick="saveScript('incoming')">Сохранить входящий</button>
-    <p>Исходящий скрипт:</p>
-    <textarea id="outgoing-edit"></textarea>
-    <button class="btn btn-success" onclick="saveScript('outgoing')">Сохранить исходящий</button>
-    <div class="controls">
-      <button class="btn btn-primary" onclick="downloadAll()">Скачать бэкап (TXT)</button>
-      <button class="btn btn-secondary" onclick="resetToDefault()">Сбросить к заводским</button>
-    </div>
-    <div class="hotkeys-info">
-      Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
-    </div>
-  </div>
-</div>
+
 <script>
-const defaultIncoming = <span class="mp-line">Здравствуйте! Это компания INSI. Чем я могу вам помочь?</span><br>- Если клиент спрашивает цену: уточните объём и адрес доставки.<br>- Если жалоба: переведите на отдел качества.- Если жалоба: переведите на отдел качества.`;
+(() => {
+  const KEY_IN = "incomingScript";
+  const KEY_OUT = "outgoingScript";
 
-const defaultOutgoing = `<span class="mp-line">Олег Николаевич, здравствуйте.</span>
-Здравствуйте.
+  // === Defaults (можно заменить на ваши финальные тексты) ===
+  const defaultIncoming = `<span class="mp-line">Здравствуйте! Это компания INSI. Чем я могу вам помочь?</span><br>
+- Уточните город строительства и размеры (Д×Ш×В).<br>
+- Уточните назначение, утепление, проёмы, монтаж/доставку.<br>
+- Назначьте видеовстречу для обсуждения КП.`;
 
-<span class="mp-line">Меня зовут Андрей, я руководитель проекта компании ИНСИ. Мне передали, что вы планируете в Екатеринбурге возвести ангар на 500 кв, верно?</span>
-Да.
+  const defaultOutgoing = `<span class="mp-line">Здравствуйте! Меня зовут ___, я менеджер проекта ИНСИ.</span><br>
+Вы ранее интересовались быстровозводимыми зданиями — актуально?<br><br>
+<span class="mp-line">Чтобы корректно посчитать стоимость, уточню несколько параметров, хорошо?</span><br>
+1) Город строительства<br>
+2) Длина × ширина, высота по стене<br>
+3) Назначение, кран-балка, утепление, тип крыши<br>
+4) Проёмы, особенности, монтаж/доставка, сроки и финансирование<br><br>
+<span class="mp-line">После расчёта назначим короткую видеовстречу для обсуждения КП.</span>`;
 
-<span class="mp-line">Отлично, для того чтобы посчитать для вас стоимость ангара, мне нужно задать вам несколько вопросов, хорошо?</span>
-Да, давайте.
-
-<span class="mp-line">1. Уточните длину и ширину.</span>
-20×25.
-
-<span class="mp-line">2. Так, высота по стене, какая нужна?</span>
-6 метров.
-
-<span class="mp-line">3. Олег Николаевич, подскажите, какое будет назначение у здания?</span>
-Склад лакокрасочной продукции.
-
-<span class="mp-line">4. Уточните, кран-балка нужна будет?</span>
-Да.
-
-<span class="mp-line">Кран-балка какой грузоподъемностью?</span>
-5 тонн.
-
-<span class="mp-line">Ходить будет на всю длину?</span>
-На всю длину.
-
-<span class="mp-line">Один кран или несколько?</span>
-Один.
-
-<span class="mp-line">5. Теперь, про утепление, сэндвич берем на стены 100 и крыша 150 или нужна другая толщина?</span>
-Да, подойдет, стены 100 и крыша 150.
-
-<span class="mp-line">6. По крыше, планируете, двускатную или односкатную?</span>
-Давайте двускатную.
-
-<span class="mp-line">7. Перейдем к проемам. Ворота, сколько их будет и какого размера?</span>
-Двое ворот, размером 3×4.
-
-<span class="mp-line">Ок. Двери?</span>
-Две двери, рядом с воротами.
-
-<span class="mp-line">Хорошо. Окна, как планируете их расположение?</span>
-Не знаю, а как лучше?
-
-<span class="mp-line">Можно сделать отдельные окна, однако обычно на складах делают ленточное остекление по всему периметру, чтобы было больше естественного света на складе и можно было сэкономить на электричестве.</span>
-Хорошо, пусть будет ленточное остекление.
-
-<span class="mp-line">8. Олег Николаевич, будут какие-нибудь дополнительные особенности, которые нам нужно учесть?</span>
-Да, смотрите, рядом с входом, по правой стороне нужно будет сделать несколько кабинетов.
-
-<span class="mp-line">Сколько кабинетов и какого размера?</span>
-4 кабинета, пусть каждый будет 2×3 метра.
-
-<span class="mp-line">Отлично, учтем и это. По техническим параметрам все, осталось уточнить по монтажу и доставке.</span>
-
-<span class="mp-line">9. Монтаж посчитать?</span>
-Да, только отдельным счетом.
-
-<span class="mp-line">10. Доставку до Екатеринбурга считаем?</span>
-Да, но тоже отдельно.
-
-<span class="mp-line">11. По этим моментам тоже все. Олег Николаевич, в какие сроки планируете реализовать проект?</span>
-В этом квартале.
-
-<span class="mp-line">12. Последний вопрос, у вас уже выделено финансирование для строительства объекта?</span>
-В целом да, решение о финансировании уже есть, осталось определиться с бюджетом.
-
-<span class="mp-line">Олег Николаевич, большое спасибо за ответы. Нам необходимо 2–3 рабочих дня для того, чтобы сделать предварительный расчет и оформить его в коммерческое предложение. Насколько вам срочно?</span>
-2–3 дня норм.
-
-<span class="mp-line">Так, через три дня это будет четверг. В какое время вам удобно в четверг созвониться по видео, чтобы подробно обсудить КП?</span>
-Давайте во второй половине дня.
-
-<span class="mp-line">Тогда в четверг в 15:00, время Екатеринбург, хорошо?</span>
-Да.
-
-<span class="mp-line">Олег Николаевич, на встрече еще будут ваши коллеги, которым стоит презентовать наше КП, или только вы?</span>
-Только я.
-
-<span class="mp-line">Принято!</span>
-
-Отправьте КП мне на почту.
-
-<span class="mp-line">Конечно, я вам отправлю КП на почту, перед встречей, потому что встреча необходима для детального обсуждения КП, всех важных параметров, которые влияют на цену, например,</span>
-
-<span class="mp-line">категория снегового района определяет расчетную нагрузку снега на кровлю сооружения, и таких важных параметров несколько, и все нужно обсудить.</span>
-
-<span class="mp-line">уровень ответственности, который регулирует нормы расчета надежности и долговечности конструкций, необходимых резервов прочности и дополнительных мер по обеспечению устойчивости здания.</span>
-
-<span class="mp-line">категория ветрового района, от которого зависит выбор толщины профилей, способ крепления и общая устойчивость конструкции.</span>
-
-<span class="mp-line">Так в какое время в четверг вам удобно будет созвониться по видео?</span>
-Давайте утром, часов в 11.
-
-<span class="mp-line">Отлично, зафиксировал. Олег Николаевич, на встрече еще будут ваши коллеги, которым стоит презентовать наше КП, или только вы?</span>
-Только я.
-
-<span class="mp-line">Принято! Теперь по email’у, если я вам в Telegram или WhatsApp напишу, вы сможете мне написать email, чтобы сейчас не диктовать?</span>
-Да, конечно.
-
-<span class="mp-line">Тогда продиктуйте, пожалуйста, номер вашего телефона, к которому привязаны Telegram или WhatsApp.</span>
-8 999 9898888.
-
-<span class="mp-line">Спасибо, зафиксировал.</span>
-
-<span class="mp-line">Хорошо, два слова о том как мы работаем: сейчас мы делаем предварительный расчет, потом заключаем договор и выставляем счет. После оплаты через 7 дней выдадим анкерное поле, вы можете заливать фундамент. Пока вы заливаете фундамент, мы готовим проект и производим комплект для сборки. После производства мы отгружаем каркас, собираем и отгружаем сэндвич.</span>
-
-<span class="mp-line">Олег Николаевич, есть ли у вас вопросы?</span>
-Пока нет.
-
-<span class="mp-line">14. Ясно. Можете еще уточнить, с какими конкурентными предложениями будете нас сравнивать?</span>
-
-Пока только к вам обратился.
-
-Кроме ангара из ЛСТК рассматриваю варианты из черного металла или арочные.
-
-<span class="mp-line">Обсудим эти варианты в рамках того, что мы из этих материалов тоже делаем.</span>
-
-Вот от Евраза тоже жду предложение.
-
-<span class="mp-line">Ясно, тогда на встрече также обсудим и этот момент.</span>
-
-<span class="mp-line">Итак, Олег Николаевич, подведем итог, мы посчитаем ангар на 500 кв по обозначенным вами параметрам, отдельно посчитаем монтаж и доставку в Екатеринбург, и в четверг в 15:00 мы обсудим КП на видеовстрече, все правильно?</span>
-Да.
-
-<span class="mp-line">Тогда до встречи и спасибо вам за обращение в нашу компанию.</span>
-Спасибо, до свидания.
-
-<span class="mp-line">Всего доброго!</span>`;
-
-function safeStorageGet(key) {
-  try { return localStorage.getItem(key); } catch (e) { return null; }
-}
-function safeStorageSet(key, val) {
-  try { localStorage.setItem(key, val); return true; } catch (e) { return false; }
-}
-function escapeRegExp(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-}
-function renderHighlighted(container, text, query) {
-  container.innerHTML = "";
-  if (!query) {
-    container.innerHTML = text;
-    return;
+  // === Storage helpers ===
+  function safeStorageGet(key) {
+    try { return localStorage.getItem(key); } catch (_) { return null; }
   }
-  var plain = text.split('<span class="mp-line">').join('').split('</span>').join('');
-  var re = new RegExp(escapeRegExp(query), "gi");
-  var lastIndex = 0;
-  var matches = Array.from(plain.matchAll(re));
-  for (var m of matches) {
-    container.appendChild(document.createTextNode(plain.slice(lastIndex, m.index)));
-    var mark = document.createElement("span");
-    mark.className = "highlight";
-    mark.textContent = m[0];
-    container.appendChild(mark);
-    lastIndex = m.index + m[0].length;
+  function safeStorageSet(key, val) {
+    try { localStorage.setItem(key, val); return true; } catch (_) { return false; }
   }
-  if (lastIndex < plain.length) {
-    container.appendChild(document.createTextNode(plain.slice(lastIndex)));
+
+  // === Utils ===
+  function escapeHtml(s) {
+    return String(s)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
-}
-function switchTab(name, btn) {
-  document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
-  document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-  document.getElementById(name).classList.add("active");
-  if (btn) btn.classList.add("active");
-}
-function loadScripts() {
-  const inc = safeStorageGet("incomingScript") || defaultIncoming;
-  const out = safeStorageGet("outgoingScript") || defaultOutgoing
-  ;
-  document.getElementById("incoming-text").innerHTML = inc;
-  document.getElementById("outgoing-text").innerHTML = out;
-  document.getElementById("incoming-edit").value = inc;
-  document.getElementById("outgoing-edit").value = out;
-}
-function saveScript(type) {
-  const val = document.getElementById(type + "-edit").value;
-  if (safeStorageSet(type + "Script", val)) { loadScripts(); alert("Сохранено!"); }
-}
-function searchInScript(type) {
-  const q = document.getElementById(type + "-search").value.trim();
-  const c = document.getElementById(type + "-text");
-  const t = safeStorageGet(type + "Script") || (type === "incoming" ? defaultIncoming : defaultOutgoing);
-      renderHighlighted  (c, t, q);
-}
-async function copyToClipboard(id) {
-  try { await navigator.clipboard.writeText(t); alert("Скопировано!"); } catch (e) {}
-}
-function downloadAll() {
-  const i = safeStorageGet("incomingScript") || defaultIncoming;
-  const o = safeStorageGet("outgoingScript") || defaultOutgoing;
-  const blob = new Blob(["INCOMING:\
-" + i + "\
-\
-OUTGOING:\
-" + o], {type: "text/plain"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "scripts.txt";
-  a.click();
-}
-function resetToDefault() {
-  if (confirm("Сбросить?")) { localStorage.removeItem("incomingScript"); localStorage.removeItem("outgoingScript"); loadScripts(); }
-}
-document.addEventListener("keydown", (e) => {
-  if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming", document.querySelectorAll(".tab-btn")[0]); }
-  if (e.ctrlKey && e.code === "KeyO") { e.preventDefault(); switchTab("outgoing", document.querySelectorAll(".tab-btn")[1]); }
-});
-document.addEventListener("DOMContentLoaded", loadScripts);
+
+  function normalizeToHtml(raw) {
+    const s = String(raw ?? "");
+    const looksLikeHtml = /<\/?[a-z][\s\S]*>/i.test(s);
+    if (looksLikeHtml) return s;
+
+    // plain text -> html with <br>, plus simple MP markers
+    const lines = s.replace(/\r\n/g, "\n").split("\n");
+    const out = [];
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!trimmed) { out.push(""); continue; }
+
+      // "МП - ..." or "[МП] ..."
+      const mp1 = trimmed.match(/^МП\s*[-:—]\s*(.*)$/i);
+      const mp2 = trimmed.match(/^\[МП\]\s*(.*)$/i);
+      if (mp1) out.push(`<span class="mp-line">${escapeHtml(mp1[1])}</span>`);
+      else if (mp2) out.push(`<span class="mp-line">${escapeHtml(mp2[1])}</span>`);
+      else out.push(escapeHtml(line));
+    }
+    return out.join("<br>");
+  }
+
+  // Санитизация: разрешаем только TEXT + <br> + <span class="mp-line"> (текст внутри)
+  function buildSafeFragmentFromHtml(html) {
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = html;
+
+    const frag = document.createDocumentFragment();
+
+    function walk(node, parentFrag) {
+      if (node.nodeType === Node.TEXT_NODE) {
+        parentFrag.appendChild(document.createTextNode(node.nodeValue));
+        return;
+      }
+
+      if (node.nodeType !== Node.ELEMENT_NODE) return;
+
+      const tag = node.tagName.toUpperCase();
+      if (tag === "BR") {
+        parentFrag.appendChild(document.createElement("br"));
+        return;
+      }
+
+      if (tag === "SPAN" && node.classList.contains("mp-line")) {
+        const span = document.createElement("span");
+        span.className = "mp-line";
+        span.textContent = node.textContent || "";
+        parentFrag.appendChild(span);
+        return;
+      }
+
+      // Любой другой тег превращаем в его текст + рекурсивно переносим переносы
+      // (и не сохраняем потенциально опасный HTML)
+      if (node.childNodes && node.childNodes.length) {
+        for (const ch of node.childNodes) walk(ch, parentFrag);
+      }
+    }
+
+    for (const ch of wrapper.childNodes) walk(ch, frag);
+    return frag;
+  }
+
+  function escapeRegExp(s) {
+    return String(s).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
+  function highlightElement(rootEl, query) {
+    const q = String(query || "").trim();
+    if (!q) return;
+
+    const re = new RegExp(escapeRegExp(q), "gi");
+    const walker = document.createTreeWalker(rootEl, NodeFilter.SHOW_TEXT);
+    const textNodes = [];
+    while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+    for (const tn of textNodes) {
+      const text = tn.nodeValue;
+      if (!text || !re.test(text)) continue;
+
+      re.lastIndex = 0;
+      const parts = [];
+      let last = 0;
+      let m;
+      while ((m = re.exec(text)) !== null) {
+        parts.push({ t: text.slice(last, m.index), h: false });
+        parts.push({ t: m[0], h: true });
+        last = m.index + m[0].length;
+        if (m[0].length === 0) break;
+      }
+      parts.push({ t: text.slice(last), h: false });
+
+      const frag = document.createDocumentFragment();
+      for (const p of parts) {
+        if (!p.t) continue;
+        if (!p.h) frag.appendChild(document.createTextNode(p.t));
+        else {
+          const span = document.createElement("span");
+          span.className = "highlight";
+          span.textContent = p.t;
+          frag.appendChild(span);
+        }
+      }
+      tn.parentNode.replaceChild(frag, tn);
+    }
+  }
+
+  function getRaw(type) {
+    const key = type === "incoming" ? KEY_IN : KEY_OUT;
+    const def = type === "incoming" ? defaultIncoming : defaultOutgoing;
+    return safeStorageGet(key) || def;
+  }
+
+  function setRaw(type, val) {
+    const key = type === "incoming" ? KEY_IN : KEY_OUT;
+    return safeStorageSet(key, String(val ?? ""));
+  }
+
+  function render(type) {
+    const raw = getRaw(type);
+    const html = normalizeToHtml(raw);
+    const query = document.getElementById(type + "-search")?.value?.trim() || "";
+
+    const box = document.getElementById(type + "-text");
+    box.innerHTML = "";
+    box.appendChild(buildSafeFragmentFromHtml(html));
+
+    if (query) highlightElement(box, query);
+  }
+
+  function loadIntoEditor() {
+    const inc = getRaw("incoming");
+    const out = getRaw("outgoing");
+    document.getElementById("incoming-edit").value = inc;
+    document.getElementById("outgoing-edit").value = out;
+  }
+
+  function switchTab(name) {
+    document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+    document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+
+    document.getElementById(name).classList.add("active");
+    document.querySelector(`.tab-btn[data-tab="${name}"]`)?.classList.add("active");
+
+    if (name === "incoming") render("incoming");
+    if (name === "outgoing") render("outgoing");
+    if (name === "edit") loadIntoEditor();
+  }
+
+  async function copyBoxText(boxId) {
+    const el = document.getElementById(boxId);
+    const text = el ? el.innerText : "";
+
+    try {
+      if (window.isSecureContext && navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        // Fallback (устаревший, но иногда выручает)
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        ta.remove();
+      }
+      alert("Скопировано!");
+    } catch (e) {
+      alert("Не удалось скопировать (проверь HTTPS/права браузера).");
+    }
+  }
+
+  function downloadAll() {
+    const i = getRaw("incoming");
+    const o = getRaw("outgoing");
+    const blob = new Blob([`INCOMING:\n${i}\n\nOUTGOING:\n${o}\n`], { type: "text/plain" });
+
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "scripts-backup.txt";
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  function resetToDefault() {
+    if (!confirm("Сбросить к заводским?")) return;
+    try { localStorage.removeItem(KEY_IN); localStorage.removeItem(KEY_OUT); } catch (_) {}
+    render("incoming");
+    render("outgoing");
+    loadIntoEditor();
+  }
+
+  // === Wiring ===
+  document.addEventListener("DOMContentLoaded", () => {
+    // initial render
+    render("incoming");
+    render("outgoing");
+
+    // tabs
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    });
+
+    // instant search
+    document.getElementById("incoming-search").addEventListener("input", () => render("incoming"));
+    document.getElementById("outgoing-search").addEventListener("input", () => render("outgoing"));
+
+    // save buttons
+    document.querySelectorAll("[data-save]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const type = btn.dataset.save;
+        const val = document.getElementById(type + "-edit").value;
+        if (setRaw(type, val)) {
+          render(type);
+          alert("Сохранено!");
+        } else {
+          alert("Не удалось сохранить (localStorage недоступен).");
+        }
+      });
+    });
+
+    // copy buttons
+    document.querySelectorAll("[data-copy]").forEach(btn => {
+      btn.addEventListener("click", () => copyBoxText(btn.dataset.copy));
+    });
+
+    // download/reset
+    document.getElementById("download-btn").addEventListener("click", downloadAll);
+    document.getElementById("reset-btn").addEventListener("click", resetToDefault);
+
+    // hotkeys
+    document.addEventListener("keydown", (e) => {
+      if (e.ctrlKey && e.code === "KeyI") { e.preventDefault(); switchTab("incoming"); }
+      if (e.ctrlKey && e.code === "KeyO") { e.preventDefault(); switchTab("outgoing"); }
+    });
+  });
+})();
 </script>
 </body>
 </html>
