@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>INSI Script Overlay</title>
+    <style>
+        :root {
+            --bg-color: #f4f4f9;
+            --panel-bg: #ffffff;
+            --primary: #007bff;
+            --text-color: #333;
+            --border-color: #ddd;
+            --highlight: #ff0;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
+        .container { max-width: 900px; margin: auto; background: var(--panel-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
+        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
+        .tab-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 8px; font-weight: 600; transition: 0.3s; }
+        .tab-btn.active { background: var(--primary); color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .search-container { margin-bottom: 15px; display: flex; gap: 10px; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
+        textarea { height: 400px; font-family: monospace; line-height: 1.5; resize: vertical; }
+        .script-box { background: #fafafa; padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; min-height: 300px; white-space: pre-wrap; font-size: 17px; line-height: 1.6; }
+        .highlight { background: var(--highlight); font-weight: bold; border-radius: 3px; }
+        .controls { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
+        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-secondary { background: #6c757d; color: white; }
+        .hotkeys-info { font-size: 12px; color: #777; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('incoming', this)">Входящий (Ctrl+I)</button>
+        <button class="tab-btn" onclick="switchTab('outgoing', this)">Исходящий (Ctrl+O)</button>
+        <button class="tab-btn" onclick="switchTab('edit', this)">Редактирование</button>
+    </div>
+
+    <!-- Входящий -->
+    <div id="incoming" class="tab-content active">
+        <div class="search-container">
+            <input type="text" id="incoming-search" placeholder="Поиск по фразе..." oninput="searchInScript('incoming')">
+        </div>
+        <div id="incoming-text" class="script-box"></div>
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="copyToClipboard('incoming-text')">Копировать всё</button>
+        </div>
+    </div>
+
+    <!-- Исходящий -->
+    <div id="outgoing" class="tab-content">
+        <div class="search-container">
+            <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." oninput="searchInScript('outgoing')">
+        </div>
+        <div id="outgoing-text" class="script-box"></div>
+        <div class="controls">
+            <button class="btn btn-secondary" onclick="copyToClipboard('outgoing-text')">Копировать всё</button>
+        </div>
+    </div>
+
+    <!-- Редактирование -->
+    <div id="edit" class="tab-content">
+        <h3>Настройка скриптов</h3>
+        <p>Входящий скрипт:</p>
+        <textarea id="incoming-edit"></textarea>
+        <button class="btn btn-success" onclick="saveScript('incoming')">Сохранить входящий</button>
+        
+        <p style="margin-top:20px;">Исходящий скрипт:</p>
+        <textarea id="outgoing-edit"></textarea>
+        <button class="btn btn-success" onclick="saveScript('outgoing')">Сохранить исходящий</button>
+        
+        <div class="controls" style="margin-top:30px; border-top: 1px solid #ddd; padding-top: 15px;">
+             <button class="btn btn-primary" onclick="downloadAll()">Скачать бэкап (TXT)</button>
+             <button class="btn btn-secondary" onclick="resetToDefault()">Сбросить к заводским</button>
+        </div>
+    </div>
+
+    <div class="hotkeys-info">
+        Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
+    </div>
+</div>
+
+<script>
+const defaultIncoming = "Здравствуйте! Это компания INSI. Чем я могу вам помочь?\
+\
+- Если клиент спрашивает цену: уточните объём и адрес доставки.\
+- Если жалоба: переведите на отдел качества.";
+const defaultOutgoing = "Добрый день! Меня зовут ..., компания INSI. Вы оставляли заявку на нашем сайте.\
+\
+1. Уточнить актуальность.\
+2. Предложить расчет стоимости.\
+3. Договориться о следующем шаге.";
+
+function safeStorageGet(key) {
+    try { return localStorage.getItem(key); }
+    catch { return null; }
+}
+
+function safeStorageSet(key, value) {
+    try { localStorage.setItem(key, value); return true; }
+    catch { return false; }
+}
+
+function escapeRegExp(s) {
+    return s.replace(/[.*+?^${}()|[\]\\\\]/g, '\\\\$&');
+}
+
+function renderHighlighted(container, text, query) {
+    container.textContent = '';
+    if (!query) {
+        container.textContent = text;
+        return;
+    }
+    const re = new RegExp(escapeRegExp(query), 'gi');
+    let lastIndex = 0;
+    for (const m of text.matchAll(re)) {
+        const start = m.index;
+        const end = start + m[0].length;
+        if (start > lastIndex) {
+            container.appendChild(document.createTextNode(text.slice(lastIndex, start)));
+        }
+        const mark = document.createElement('span');
+        mark.className = 'highlight';
+        mark.textContent = text.slice(start, end);
+        container.appendChild(mark);
+        lastIndex = end;
+    }
+    if (lastIndex < text.length) {
+        container.appendChild(document.createTextNode(text.slice(lastIndex)));
+    }
+}
+
+function switchTab(tabName, btnEl) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById(tabName).classList.add('active');
+    if (btnEl) btnEl.classList.add('active');
+}
+
+function loadScripts() {
+    const incoming = safeStorageGet('incomingScript') ?? defaultIncoming;
+    const outgoing = safeStorageGet('outgoingScript') ?? defaultOutgoing;
+
+    document.getElementById('incoming-text').textContent = incoming;
+    document.getElementById('outgoing-text').textContent = outgoing;
+    document.getElementById('incoming-edit').value = incoming;
+    document.getElementById('outgoing-edit').value = outgoing;
+}
+
+function saveScript(type) {
+    const text = document.getElementById(type + '-edit').value;
+    const ok = safeStorageSet(type + 'Script', text);
+    if (ok) {
+        loadScripts();
+        alert('Сохранено!');
+    } else {
+        alert('Ошибка сохранения: localStorage недоступен.');
+    }
+}
+
+function searchInScript(type) {
+    const query = document.getElementById(type + '-search').value.trim();
+    const container = document.getElementById(type + '-text');
+    const text = safeStorageGet(type + 'Script') ?? (type === 'incoming' ? defaultIncoming : defaultOutgoing);
+    renderHighlighted(container, text, query);
+}
+
+async function copyToClipboard(elementId) {
+    const text = document.getElementById(elementId).textContent;
+    try {
+        await navigator.clipboard.writeText(text);
+        alert('Скопировано!');
+    } catch {
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('Скопировано (через fallback)!');
+    }
+}
+
+function downloadAll() {
+    const inc = safeStorageGet('incomingScript') ?? defaultIncoming;
+    const out = safeStorageGet('outgoingScript') ?? defaultOutgoing;
+    const content = "INCOMING:\
+" + inc + "\
+\
+--- OUTGOING ---\
+" + out;
+    const blob = new Blob([content], {type: 'text/plain'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'insi-scripts.txt';
+    a.click();
+}
+
+function resetToDefault() {
+    if (confirm('Сбросить все правки?')) {
+        localStorage.removeItem('incomingScript');
+        localStorage.removeItem('outgoingScript');
+        loadScripts();
+    }
+}
+
+document.addEventListener('keydown', (e) => {
+    if (e.ctrlKey && e.code === 'KeyI') { e.preventDefault(); switchTab('incoming', document.querySelectorAll('.tab-btn')[0]); }
+    if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); switchTab('outgoing', document.querySelectorAll('.tab-btn')[1]); }
+});
+
+document.addEventListener('DOMContentLoaded', loadScripts);
+</script>
+</body>
+</html>
