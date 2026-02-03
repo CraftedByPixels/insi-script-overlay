@@ -1,220 +1,562 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>INSI Script Overlay</title>
-    <style>
-        :root {
-            --bg-color: #f4f4f9;
-            --panel-bg: #ffffff;
-            --primary: #007bff;
-            --text-color: #333;
-            --border-color: #ddd;
-            --highlight: #ff0;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); color: var(--text-color); margin: 0; padding: 15px; }
-        .container { max-width: 900px; margin: auto; background: var(--panel-bg); padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border: 1px solid var(--border-color); }
-        .tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid var(--border-color); padding-bottom: 10px; }
-        .tab-btn { padding: 10px 20px; border: none; background: #eee; cursor: pointer; border-radius: 8px; font-weight: 600; transition: 0.3s; }
-        .tab-btn.active { background: var(--primary); color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .search-container { margin-bottom: 15px; display: flex; gap: 10px; }
-        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid var(--border-color); border-radius: 8px; font-size: 16px; box-sizing: border-box; }
-        textarea { height: 400px; font-family: monospace; line-height: 1.5; resize: vertical; }
-        .script-box { background: #fafafa; padding: 20px; border: 1px solid var(--border-color); border-radius: 8px; min-height: 300px; white-space: pre-wrap; font-size: 17px; line-height: 1.6; }
-        .highlight { background: var(--highlight); font-weight: bold; border-radius: 3px; }
-        .controls { margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap; }
-        .btn { padding: 10px 18px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-primary { background: var(--primary); color: white; }
-        .btn-success { background: #28a745; color: white; }
-        .btn-secondary { background: #6c757d; color: white; }
-        .hotkeys-info { font-size: 12px; color: #777; margin-top: 10px; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>INSI Script Overlay</title>
+  <style>
+    :root {
+      --bg-color: #f4f4f9;
+      --panel-bg: #ffffff;
+      --primary: #007bff;
+      --text-color: #333;
+      --border-color: #ddd;
+      --highlight: #ff0;
+    }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 15px;
+    }
+    .container {
+      max-width: 900px;
+      margin: auto;
+      background: var(--panel-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      border: 1px solid var(--border-color);
+    }
+    .tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 10px;
+    }
+    .tab-btn {
+      padding: 10px 20px;
+      border: none;
+      background: #eee;
+      cursor: pointer;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: 0.3s;
+    }
+    .tab-btn.active {
+      background: var(--primary);
+      color: white;
+    }
+    .tab-content {
+      display: none;
+    }
+    .tab-content.active {
+      display: block;
+    }
+    .search-container {
+      margin-bottom: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    textarea {
+      height: 400px;
+      font-family: monospace;
+      line-height: 1.5;
+      resize: vertical;
+    }
+    .script-box {
+      background: #fafafa;
+      padding: 20px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      min-height: 300px;
+      white-space: pre-wrap;
+      font-size: 17px;
+      line-height: 1.6;
+    }
+    .highlight {
+      background: var(--highlight);
+      font-weight: bold;
+      border-radius: 3px;
+    }
+    .controls {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 18px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.2s;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: white;
+    }
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+    .btn-secondary {
+      background: #6c757d;
+      color: white;
+    }
+    .hotkeys-info {
+      font-size: 12px;
+      color: #777;
+      margin-top: 10px;
+    }
+    /* фон для фраз менеджера */
+    .mp-line {
+      background: #eef6ff;
+      padding: 2px 4px;
+      border-radius: 3px;
+      display: inline;
+    }
+  </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('incoming', this)">Входящий (Ctrl+I)</button>
-        <button class="tab-btn" onclick="switchTab('outgoing', this)">Исходящий (Ctrl+O)</button>
-        <button class="tab-btn" onclick="switchTab('edit', this)">Редактирование</button>
-    </div>
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('incoming', this)">Входящий (Ctrl+I)</button>
+    <button class="tab-btn" onclick="switchTab('outgoing', this)">Исходящий (Ctrl+O)</button>
+    <button class="tab-btn" onclick="switchTab('edit', this)">Редактирование</button>
+  </div>
 
-    <!-- Входящий -->
-    <div id="incoming" class="tab-content active">
-        <div class="search-container">
-            <input type="text" id="incoming-search" placeholder="Поиск по фразе..." oninput="searchInScript('incoming')">
-        </div>
-        <div id="incoming-text" class="script-box"></div>
-        <div class="controls">
-            <button class="btn btn-secondary" onclick="copyToClipboard('incoming-text')">Копировать всё</button>
-        </div>
+  <!-- Входящий -->
+  <div id="incoming" class="tab-content active">
+    <div class="search-container">
+      <input type="text" id="incoming-search" placeholder="Поиск по фразе..." oninput="searchInScript('incoming')">
     </div>
-
-    <!-- Исходящий -->
-    <div id="outgoing" class="tab-content">
-        <div class="search-container">
-            <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." oninput="searchInScript('outgoing')">
-        </div>
-        <div id="outgoing-text" class="script-box"></div>
-        <div class="controls">
-            <button class="btn btn-secondary" onclick="copyToClipboard('outgoing-text')">Копировать всё</button>
-        </div>
+    <div id="incoming-text" class="script-box"></div>
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="copyToClipboard('incoming-text')">Копировать всё</button>
     </div>
+  </div>
 
-    <!-- Редактирование -->
-    <div id="edit" class="tab-content">
-        <h3>Настройка скриптов</h3>
-        <p>Входящий скрипт:</p>
-        <textarea id="incoming-edit"></textarea>
-        <button class="btn btn-success" onclick="saveScript('incoming')">Сохранить входящий</button>
-        
-        <p style="margin-top:20px;">Исходящий скрипт:</p>
-        <textarea id="outgoing-edit"></textarea>
-        <button class="btn btn-success" onclick="saveScript('outgoing')">Сохранить исходящий</button>
-        
-        <div class="controls" style="margin-top:30px; border-top: 1px solid #ddd; padding-top: 15px;">
-             <button class="btn btn-primary" onclick="downloadAll()">Скачать бэкап (TXT)</button>
-             <button class="btn btn-secondary" onclick="resetToDefault()">Сбросить к заводским</button>
-        </div>
+  <!-- Исходящий -->
+  <div id="outgoing" class="tab-content">
+    <div class="search-container">
+      <input type="text" id="outgoing-search" placeholder="Поиск по фразе..." oninput="searchInScript('outgoing')">
+    </div>
+    <div id="outgoing-text" class="script-box"></div>
+    <div class="controls">
+      <button class="btn btn-secondary" onclick="copyToClipboard('outgoing-text')">Копировать всё</button>
+    </div>
+  </div>
+
+  <!-- Редактирование -->
+  <div id="edit" class="tab-content">
+    <h3>Настройка скриптов</h3>
+    <p>Входящий скрипт:</p>
+    <textarea id="incoming-edit"></textarea>
+    <button class="btn btn-success" onclick="saveScript('incoming')">Сохранить входящий</button>
+
+    <p>Исходящий скрипт:</p>
+    <textarea id="outgoing-edit"></textarea>
+    <button class="btn btn-success" onclick="saveScript('outgoing')">Сохранить исходящий</button>
+
+    <div class="controls">
+      <button class="btn btn-primary" onclick="downloadAll()">Скачать бэкап (TXT)</button>
+      <button class="btn btn-secondary" onclick="resetToDefault()">Сбросить к заводским</button>
     </div>
 
     <div class="hotkeys-info">
-        Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
+      Горячие клавиши: [Ctrl+I] Входящий | [Ctrl+O] Исходящий | Поиск работает мгновенно
     </div>
+  </div>
 </div>
 
 <script>
-const defaultIncoming = "Здравствуйте! Это компания INSI. Чем я могу вам помочь?\
+const defaultIncoming =
+"Здравствуйте! Это компания INSI. Чем я могу вам помочь?\
 \
-- Если клиент спрашивает цену: уточните объём и адрес доставки.\
-- Если жалоба: переведите на отдел качества.";
-const defaultOutgoing = "Добрый день! Меня зовут ..., компания INSI. Вы оставляли заявку на нашем сайте.\
+" +
+"- Если клиент спрашивает цену: уточните объём и адрес доставки.\
+" +
+"- Если жалоба: переведите на отдел качества.";
+
+const defaultOutgoing =
+"<span class=\\"mp-line\\">Олег Николаевич, здравствуйте.</span>\
+" +
+"Здравствуйте.\
 \
-1. Уточнить актуальность.\
-2. Предложить расчет стоимости.\
-3. Договориться о следующем шаге.";
+" +
+
+"<span class=\\"mp-line\\">Меня зовут Андрей, я руководитель проекта компании ИНСИ. Мне передали, что вы планируете в Екатеринбурге возвести ангар на 500 кв, верно?</span>\
+" +
+"Да.\
+\
+" +
+
+"<span class=\\"mp-line\\">Отлично, для того чтобы посчитать для вас стоимость ангара, мне нужно задать вам несколько вопросов, хорошо?</span>\
+" +
+"Да, давайте.\
+\
+" +
+
+"<span class=\\"mp-line\\">1. Уточните длину и ширину.</span>\
+" +
+"20×25.\
+\
+" +
+
+"<span class=\\"mp-line\\">2. Так, высота по стене, какая нужна?</span>\
+" +
+"6 метров.\
+\
+" +
+
+"<span class=\\"mp-line\\">3. Олег Николаевич, подскажите, какое будет назначение у здания?</span>\
+" +
+"Склад лакокрасочной продукции.\
+\
+" +
+
+"<span class=\\"mp-line\\">4. Уточните, кран-балка нужна будет?</span>\
+" +
+"Да.\
+\
+" +
+
+"<span class=\\"mp-line\\">Кран-балка какой грузоподъемностью?</span>\
+" +
+"5 тонн.\
+\
+" +
+
+"<span class=\\"mp-line\\">Ходить будет на всю длину?</span>\
+" +
+"На всю длину.\
+\
+" +
+
+"<span class=\\"mp-line\\">Один кран или несколько?</span>\
+" +
+"Один.\
+\
+" +
+
+"<span class=\\"mp-line\\">5. Теперь, про утепление, сэндвич берем на стены 100 и крыша 150 или нужна другая толщина?</span>\
+" +
+"Да, подойдет, стены 100 и крыша 150.\
+\
+" +
+
+"<span class=\\"mp-line\\">6. По крыше, планируете, двускатную или односкатную?</span>\
+" +
+"Давайте двускатную.\
+\
+" +
+
+"<span class=\\"mp-line\\">7. Перейдем к проемам. Ворота, сколько их будет и какого размера?</span>\
+" +
+"Двое ворот, размером 3×4.\
+\
+" +
+
+"<span class=\\"mp-line\\">Ок. Двери?</span>\
+" +
+"Две двери, рядом с воротами.\
+\
+" +
+
+"<span class=\\"mp-line\\">Хорошо. Окна, как планируете их расположение?</span>\
+" +
+"Не знаю, а как лучше?\
+\
+" +
+
+"<span class=\\"mp-line\\">Можно сделать отдельные окна, однако обычно на складах делают ленточное остекление по всему периметру, чтобы было больше естественного света на складе и можно было сэкономить на электричестве.</span>\
+" +
+"Хорошо, пусть будет ленточное остекление.\
+\
+" +
+
+"<span class=\\"mp-line\\">8. Олег Николаевич, будут какие-нибудь дополнительные особенности, которые нам нужно учесть?</span>\
+" +
+"Да, смотрите, рядом с входом, по правой стороне нужно будет сделать несколько кабинетов.\
+\
+" +
+
+"<span class=\\"mp-line\\">Сколько кабинетов и какого размера?</span>\
+" +
+"4 кабинета, пусть каждый будет 2×3 метра.\
+\
+" +
+
+"<span class=\\"mp-line\\">Отлично, учтем и это. По техническим параметрам все, осталось уточнить по монтажу и доставке.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">9. Монтаж посчитать?</span>\
+" +
+"Да, только отдельным счетом.\
+\
+" +
+
+"<span class=\\"mp-line\\">10. Доставку до Екатеринбурга считаем?</span>\
+" +
+"Да, но тоже отдельно.\
+\
+" +
+
+"<span class=\\"mp-line\\">11. По этим моментам тоже все. Олег Николаевич, в какие сроки планируете реализовать проект?</span>\
+" +
+"В этом квартале.\
+\
+" +
+
+"<span class=\\"mp-line\\">12. Последний вопрос, у вас уже выделено финансирование для строительства объекта?</span>\
+" +
+"В целом да, решение о финансировании уже есть, осталось определиться с бюджетом.\
+\
+" +
+
+"<span class=\\"mp-line\\">Олег Николаевич, большое спасибо за ответы. Нам необходимо 2–3 рабочих дня для того, чтобы сделать предварительный расчет и оформить его в коммерческое предложение. Насколько вам срочно?</span>\
+" +
+"2–3 дня норм.\
+\
+" +
+
+"<span class=\\"mp-line\\">Так, через три дня это будет четверг. В какое время вам удобно в четверг созвониться по видео, чтобы подробно обсудить КП?</span>\
+" +
+"Давайте во второй половине дня.\
+\
+" +
+
+"<span class=\\"mp-line\\">Тогда в четверг в 15:00, время Екатеринбург, хорошо?</span>\
+" +
+"Да.\
+\
+" +
+
+"<span class=\\"mp-line\\">Олег Николаевич, на встрече еще будут ваши коллеги, которым стоит презентовать наше КП, или только вы?</span>\
+" +
+"Только я.\
+\
+" +
+
+"<span class=\\"mp-line\\">Принято!</span>\
+\
+" +
+
+"Отправьте КП мне на почту.\
+\
+" +
+
+"<span class=\\"mp-line\\">Конечно, я вам отправлю КП на почту, перед встречей, потому что встреча необходима для детального обсуждения КП, всех важных параметров, которые влияют на цену, например,</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">категория снегового района определяет расчетную нагрузку снега на кровлю сооружения, и таких важных параметров несколько, и все нужно обсудить.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">уровень ответственности, который регулирует нормы расчета надежности и долговечности конструкций, необходимых резервов прочности и дополнительных мер по обеспечению устойчивости здания.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">категория ветрового района, от которого зависит выбор толщины профилей, способ крепления и общая устойчивость конструкции.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">Так в какое время в четверг вам удобно будет созвониться по видео?</span>\
+" +
+"Давайте утром, часов в 11.\
+\
+" +
+
+"<span class=\\"mp-line\\">Отлично, зафиксировал. Олег Николаевич, на встрече еще будут ваши коллеги, которым стоит презентовать наше КП, или только вы?</span>\
+" +
+"Только я.\
+\
+" +
+
+"<span class=\\"mp-line\\">Принято! Теперь по email’у, если я вам в Telegram или WhatsApp напишу, вы сможете мне написать email, чтобы сейчас не диктовать?</span>\
+" +
+"Да, конечно.\
+\
+" +
+
+"<span class=\\"mp-line\\">Тогда продиктуйте, пожалуйста, номер вашего телефона, к которому привязаны Telegram или WhatsApp.</span>\
+" +
+"8 999 9898888.\
+\
+" +
+
+"<span class=\\"mp-line\\">Спасибо, зафиксировал.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">Хорошо, два слова о том как мы работаем: сейчас мы делаем предварительный расчет, потом заключаем договор и выставляем счет. После оплаты через 7 дней выдадим анкерное поле, вы можете заливать фундамент. Пока вы заливаете фундамент, мы готовим проект и производим комплект для сборки. После производства мы отгружаем каркас, собираем и отгружаем сэндвич.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">Олег Николаевич, есть ли у вас вопросы?</span>\
+" +
+"Пока нет.\
+\
+" +
+
+"<span class=\\"mp-line\\">14. Ясно. Можете еще уточнить, с какими конкурентными предложениями будете нас сравнивать?</span>\
+\
+" +
+
+"Пока только к вам обратился.\
+\
+" +
+
+"Кроме ангара из ЛСТК рассматриваю варианты из черного металла или арочные.\
+\
+" +
+"<span class=\\"mp-line\\">Обсудим эти варианты в рамках того, что мы из этих материалов тоже делаем.</span>\
+\
+" +
+
+"Вот от Евраза тоже жду предложение.\
+\
+" +
+"<span class=\\"mp-line\\">Ясно, тогда на встрече также обсудим и этот момент.</span>\
+\
+" +
+
+"<span class=\\"mp-line\\">Итак, Олег Николаевич, подведем итог, мы посчитаем ангар на 500 кв по обозначенным вами параметрам, отдельно посчитаем монтаж и доставку в Екатеринбург, и в четверг в 15:00 мы обсудим КП на видеовстрече, все правильно?</span>\
+" +
+"Да.\
+\
+" +
+
+"<span class=\\"mp-line\\">Тогда до встречи и спасибо вам за обращение в нашу компанию.</span>\
+" +
+"Спасибо, до свидания.\
+\
+" +
+"<span class=\\"mp-line\\">Всего доброго!</span>";
 
 function safeStorageGet(key) {
-    try { return localStorage.getItem(key); }
-    catch { return null; }
+  try { return localStorage.getItem(key); }
+  catch { return null; }
 }
-
 function safeStorageSet(key, value) {
-    try { localStorage.setItem(key, value); return true; }
-    catch { return false; }
+  try { localStorage.setItem(key, value); return true; }
+  catch { return false; }
 }
-
 function escapeRegExp(s) {
-    return s.replace(/[.*+?^${}()|[\]\\\\]/g, '\\\\$&');
+  return s.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\\\$&');
 }
-
 function renderHighlighted(container, text, query) {
-    container.textContent = '';
-    if (!query) {
-        container.textContent = text;
-        return;
-    }
-    const re = new RegExp(escapeRegExp(query), 'gi');
-    let lastIndex = 0;
-    for (const m of text.matchAll(re)) {
-        const start = m.index;
-        const end = start + m[0].length;
-        if (start > lastIndex) {
-            container.appendChild(document.createTextNode(text.slice(lastIndex, start)));
-        }
-        const mark = document.createElement('span');
-        mark.className = 'highlight';
-        mark.textContent = text.slice(start, end);
-        container.appendChild(mark);
-        lastIndex = end;
-    }
-    if (lastIndex < text.length) {
-        container.appendChild(document.createTextNode(text.slice(lastIndex)));
-    }
+  container.innerHTML = '';
+  if (!query) {
+    container.innerHTML = text;
+    return;
+  }
+  const plain = text.replace(/<span class="mp-line">/g, '').replace(/<\\/span>/g, '');
+  const re = new RegExp(escapeRegExp(query), 'gi');
+  let lastIndex = 0;
+  for (const m of plain.matchAll(re)) {
+    const start = m.index;
+    const end = start + m[0].length;
+    container.appendChild(document.createTextNode(plain.slice(lastIndex, start)));
+    const mark = document.createElement('span');
+    mark.className = 'highlight';
+    mark.textContent = plain.slice(start, end);
+    container.appendChild(mark);
+    lastIndex = end;
+  }
+  if (lastIndex < plain.length) {
+    container.appendChild(document.createTextNode(plain.slice(lastIndex)));
+  }
 }
-
 function switchTab(tabName, btnEl) {
-    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.getElementById(tabName).classList.add('active');
-    if (btnEl) btnEl.classList.add('active');
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById(tabName).classList.add('active');
+  if (btnEl) btnEl.classList.add('active');
 }
-
 function loadScripts() {
-    const incoming = safeStorageGet('incomingScript') ?? defaultIncoming;
-    const outgoing = safeStorageGet('outgoingScript') ?? defaultOutgoing;
-
-    document.getElementById('incoming-text').textContent = incoming;
-    document.getElementById('outgoing-text').textContent = outgoing;
-    document.getElementById('incoming-edit').value = incoming;
-    document.getElementById('outgoing-edit').value = outgoing;
+  const incoming = safeStorageGet('incomingScript') ?? defaultIncoming;
+  const outgoing = safeStorageGet('outgoingScript') ?? defaultOutgoing;
+  document.getElementById('incoming-text').textContent = incoming;
+  document.getElementById('outgoing-text').innerHTML = outgoing;
+  document.getElementById('incoming-edit').value = incoming;
+  document.getElementById('outgoing-edit').value = outgoing;
 }
-
 function saveScript(type) {
-    const text = document.getElementById(type + '-edit').value;
-    const ok = safeStorageSet(type + 'Script', text);
-    if (ok) {
-        loadScripts();
-        alert('Сохранено!');
-    } else {
-        alert('Ошибка сохранения: localStorage недоступен.');
-    }
+  const text = document.getElementById(type + '-edit').value;
+  const ok = safeStorageSet(type + 'Script', text);
+  if (ok) {
+    loadScripts();
+    alert('Сохранено!');
+  } else {
+    alert('Ошибка сохранения: localStorage недоступен.');
+  }
 }
-
 function searchInScript(type) {
-    const query = document.getElementById(type + '-search').value.trim();
-    const container = document.getElementById(type + '-text');
-    const text = safeStorageGet(type + 'Script') ?? (type === 'incoming' ? defaultIncoming : defaultOutgoing);
+  const query = document.getElementById(type + '-search').value.trim();
+  const container = document.getElementById(type + '-text');
+  const text = safeStorageGet(type + 'Script') ?? (type === 'incoming' ? defaultIncoming : defaultOutgoing);
+  if (type === 'outgoing') {
     renderHighlighted(container, text, query);
+  } else {
+    renderHighlighted(container, text, query);
+  }
 }
-
 async function copyToClipboard(elementId) {
-    const text = document.getElementById(elementId).textContent;
-    try {
-        await navigator.clipboard.writeText(text);
-        alert('Скопировано!');
-    } catch {
-        const ta = document.createElement('textarea');
-        ta.value = text;
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand('copy');
-        document.body.removeChild(ta);
-        alert('Скопировано (через fallback)!');
-    }
+  const el = document.getElementById(elementId);
+  const text = el.innerText || el.textContent;
+  try {
+    await navigator.clipboard.writeText(text);
+    alert('Скопировано!');
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    alert('Скопировано (через fallback)!');
+  }
 }
-
 function downloadAll() {
-    const inc = safeStorageGet('incomingScript') ?? defaultIncoming;
-    const out = safeStorageGet('outgoingScript') ?? defaultOutgoing;
-    const content = "INCOMING:\
+  const inc = safeStorageGet('incomingScript') ?? defaultIncoming;
+  const out = safeStorageGet('outgoingScript') ?? defaultOutgoing;
+  const content = "INCOMING:\
 " + inc + "\
 \
 --- OUTGOING ---\
 " + out;
-    const blob = new Blob([content], {type: 'text/plain'});
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'insi-scripts.txt';
-    a.click();
+  const blob = new Blob([content], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'insi-scripts.txt';
+  a.click();
 }
-
 function resetToDefault() {
-    if (confirm('Сбросить все правки?')) {
-        localStorage.removeItem('incomingScript');
-        localStorage.removeItem('outgoingScript');
-        loadScripts();
-    }
+  if (confirm('Сбросить все правки?')) {
+    localStorage.removeItem('incomingScript');
+    localStorage.removeItem('outgoingScript');
+    loadScripts();
+  }
 }
-
 document.addEventListener('keydown', (e) => {
-    if (e.ctrlKey && e.code === 'KeyI') { e.preventDefault(); switchTab('incoming', document.querySelectorAll('.tab-btn')[0]); }
-    if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); switchTab('outgoing', document.querySelectorAll('.tab-btn')[1]); }
+  if (e.ctrlKey && e.code === 'KeyI') { e.preventDefault(); switchTab('incoming', document.querySelectorAll('.tab-btn')[0]); }
+  if (e.ctrlKey && e.code === 'KeyO') { e.preventDefault(); switchTab('outgoing', document.querySelectorAll('.tab-btn')[1]); }
 });
-
 document.addEventListener('DOMContentLoaded', loadScripts);
 </script>
 </body>
